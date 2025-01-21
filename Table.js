@@ -3,9 +3,11 @@ import {MetaCrudContext} from './MetaCrud'
 import Pagination from './Pagination';
 
 function Table({className=""}) {
-  const {orderBy, orderDir, setOrderBy, setOrderDir, selectedRows, setSelectedRows, columns_data_hook, records_data_hook} = React.useContext(MetaCrudContext);
+  const {wrappers, orderBy, orderDir, setOrderBy, setOrderDir, selectedRows, setSelectedRows, columns_data_hook, records_data_hook} = React.useContext(MetaCrudContext);
   const columns = columns_data_hook?.response?.data;
   const records = records_data_hook?.response?.data;
+
+  const numberOfHiddenColumns = columns?.filter(column=>column?.Comment?.metacrud?.hidden===true)?.length || 0;
 
   const rowsShowing = records;
 
@@ -28,19 +30,30 @@ function Table({className=""}) {
     }
   };
 
+  const [expandedRows, setExpandedRows] = React.useState([]);
+
+  const handleExpandRow = (id) => {
+    if(expandedRows.includes(id)) {
+      setExpandedRows(expandedRows.filter(r => r !== id));
+    }
+    else {
+      setExpandedRows([...expandedRows, id]);
+    }
+  };
+
 
   return ( (columns_data_hook?.loading || records_data_hook?.loading ) ? <div className='spinner-border spinner-border-sm text-primary'></div> : 
   <div className={'MetaCrudTable '+className}>
     <div className={'table-responsive w-auto'}>
-      <table className='table w-auto table-striped table-hover m-0'>
+      <table className='table w-auto table-striped table-hover m-0 border border-tertiary border-1'>
         <thead>
           <tr>
             <th className='px-1 px-2 text-center'><input className='form-check-input' type="checkbox" onChange={handleCheckAll} /></th>
             {
-              columns?.map((column, i) => (
+              columns?.filter(column=>!column?.Comment?.metacrud?.hidden===true).map((column, i) => (
                 <th key={i}>
                   <div className='d-flex align-items-start'>
-                    {column?.Comment?.metacrud?.label??column?.Field}
+                    <small>{column?.Comment?.metacrud?.label??column?.Field}</small>
                     <button 
                       disabled={(orderBy === (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field) && orderDir === 'ASC'}
                       onClick={()=>{setOrderBy((column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field); setOrderDir('ASC')}} 
@@ -57,16 +70,36 @@ function Table({className=""}) {
         </thead>
         <tbody>
           {
-            records?.map((record, i) => (
-              <tr key={i}>
-                <td className='p-1 px-2 text-center'><input className='form-check-input' type="checkbox" checked={selectedRows.includes(record[primaryKeyName])} onChange={(e)=>handleCheckOne(e, record[primaryKeyName])} /></td>
+            records?.map((record, i) => { 
+              const tdClassName = (expandedRows.includes(i) ? 'bg-primary text-light ' : '')+'p-2 text-center';
+              return (
+              <>
+              <tr key={i} onDoubleClick={()=>handleExpandRow(i)} title={numberOfHiddenColumns && 'Doble click para expandir'}>
+                <td className={tdClassName}><input className='form-check-input' type="checkbox" checked={selectedRows.includes(record[primaryKeyName])} onChange={(e)=>handleCheckOne(e, record[primaryKeyName])} /></td>
                 {
-                  columns?.map((column, j) => (
-                    <td key={j}>{ record[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ] }</td>
+                  columns?.filter(column=>!column?.Comment?.metacrud?.hidden===true).map((column, j) => (
+                    <td key={j} className={tdClassName}>{ record[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ] }</td>
                   ))
                 }
               </tr>
-            ))
+              {
+                (numberOfHiddenColumns && expandedRows.includes(i)) ? (
+                  <tr key={i+'-data'} className=''>
+                    <td colSpan={columns.length-numberOfHiddenColumns+1} className='border border-primary border-2'>
+                      {
+                        columns?.filter(column=>column?.Comment?.metacrud?.hidden===true).map((column, j) => (
+                          <div key={j} className='d-flex align-items-start'>
+                            <span className='fw-bold'>{column?.Comment?.metacrud?.label??column?.Field}: </span>
+                            <span className='ms-1'>{ wrappers[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ]? wrappers[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ](record[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ]) : record[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ] }</span>
+                          </div>
+                        ))
+                      }
+                    </td>
+                  </tr>
+                ) : null
+              }
+              </>
+            );})
           }
         </tbody>
       </table>
