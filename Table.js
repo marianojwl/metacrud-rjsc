@@ -3,7 +3,7 @@ import {MetaCrudContext} from './MetaCrud'
 import Pagination from './Pagination';
 
 function Table({className=""}) {
-  const {wrappers, orderBy, orderDir, setOrderBy, setOrderDir, selectedRows, setSelectedRows, columns_data_hook, records_data_hook} = React.useContext(MetaCrudContext);
+  const {extra_columns, wrappers, orderBy, orderDir, setOrderBy, setOrderDir, selectedRows, setSelectedRows, columns_data_hook, records_data_hook} = React.useContext(MetaCrudContext);
   const columns = columns_data_hook?.response?.data;
   const records = records_data_hook?.response?.data;
 
@@ -66,21 +66,33 @@ function Table({className=""}) {
                 </th>
               ))
             }
+            {
+              /*
+              extra_columns?.map((column, i) => (
+                <th key={"ec"+i}>{column?.Comment?.metacrud?.label??column?.Field}</th>
+              ))
+              */
+            }
           </tr>
         </thead>
         <tbody>
           {
             records?.map((record, i) => { 
-              const tdClassName = (expandedRows.includes(i) ? 'bg-primary text-light ' : '')+'p-2 text-center';
+              const tdClassName = (expandedRows.includes(i) ? 'bg-primary text-light ' : '')+'p-2';
               return (
               <>
-              <tr key={i} onDoubleClick={()=>handleExpandRow(i)} title={numberOfHiddenColumns && 'Doble click para expandir'}>
+              <tr key={i} onDoubleClick={numberOfHiddenColumns?()=>handleExpandRow(i):null} title={numberOfHiddenColumns ? 'Doble click para expandir' : null}>
                 <td className={tdClassName}><input className='form-check-input' type="checkbox" checked={selectedRows.includes(record[primaryKeyName])} onChange={(e)=>handleCheckOne(e, record[primaryKeyName])} /></td>
                 {
                   columns?.filter(column=>!column?.Comment?.metacrud?.hidden===true).map((column, j) => (
                     <td key={j} className={tdClassName}>{ wrappers[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column?.Field ]? wrappers[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column?.Field ]("wrapper-"+i+"-"+j, (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column?.Field ,record) : record[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column?.Field ] }</td>
                   ))
                 }
+                {/*
+                  extra_columns?.map((column, j) => (
+                    <td key={"ecc-"+j} className={tdClassName}>{ wrappers[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ]? wrappers[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ]("wrapper-"+i+"-"+j, (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ,record) : record[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ] }</td>
+                  ))
+                */}
               </tr>
               {
                 (numberOfHiddenColumns && expandedRows.includes(i)) ? (

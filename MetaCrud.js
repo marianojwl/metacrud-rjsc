@@ -7,7 +7,7 @@ import DeleteConfirm from './DeleteConfirm';
 
 export const MetaCrudContext = createContext();
 
-function MetaCrud({tablename, api_url, user_roles, wrappers={}, defaultOrderBy=1, defaultOrderDir="ASC"}) {
+function MetaCrud({tablename, api_url, user_roles, extra_columns=[], wrappers={}, defaultOrderBy=1, defaultOrderDir="ASC"}) {
   // SECTIONS
   const [section, setSection] = useState('read');
   
@@ -77,7 +77,7 @@ function MetaCrud({tablename, api_url, user_roles, wrappers={}, defaultOrderBy=1
 
   
   return ( table_data_hook?.loading ? <div className='spinner-border spinner-border-sm text-primary'></div> :
-    <MetaCrudContext.Provider value={{wrappers, search, setSearch, orderBy, orderDir, setOrderBy, setOrderDir, apiCallback, setLastResult, table_meta, table_status, user_roles, page, setPage, pageLimit, setPageLimit, doReload, selectedRows, setSelectedRows, section, setSection, table_data_hook, columns_data_hook, records_data_hook, tablename, api_url}}>
+    <MetaCrudContext.Provider value={{extra_columns, wrappers, search, setSearch, orderBy, orderDir, setOrderBy, setOrderDir, apiCallback, setLastResult, table_meta, table_status, user_roles, page, setPage, pageLimit, setPageLimit, doReload, selectedRows, setSelectedRows, section, setSection, table_data_hook, columns_data_hook, records_data_hook, tablename, api_url}}>
       <div className='border rounded px-3 py-2'>
         <h3 className='border-bottom ps-1 pt-2 pb-2'>{table_meta?.title??table_status?.Name}</h3>
         { (section === 'read' && lastResult && (lastResult?.message || lastResult?.error)) &&
