@@ -7,7 +7,7 @@ import DeleteConfirm from './DeleteConfirm';
 
 export const MetaCrudContext = createContext();
 
-function MetaCrud({tablename, api_url, user_roles, wrappers}) {
+function MetaCrud({tablename, api_url, user_roles, wrappers={}, defaultOrderBy=1, defaultOrderDir="ASC"}) {
   // SECTIONS
   const [section, setSection] = useState('read');
   
@@ -53,15 +53,15 @@ function MetaCrud({tablename, api_url, user_roles, wrappers}) {
   }, [search]);
   
   // SORTING
-  const [orderBy, setOrderBy] = useState(1);
-  const [orderDir, setOrderDir] = useState('ASC');
+  const [orderBy, setOrderBy] = useState(defaultOrderBy);
+  const [orderDir, setOrderDir] = useState(defaultOrderDir);
 
   // HOOKS
   const columns_data_hook = useApi(api_url + '/meta/' + tablename + '/columns', '', true);
 
   const table_data_hook = useApi(api_url + '/meta/' + tablename + '/table', '', true, [reloads]);
 
-  const records_data_hook = useApi(api_url + '/crud/' + tablename, '', true, [reloads], getCallback);
+  const records_data_hook = useApi(api_url + '/crud/' + tablename, '', false, [reloads], getCallback);
 
   const query = '?page='+page+'&limit='+pageLimit+'&sort='+orderBy+'&order='+orderDir + (search!==''?'&search='+search:'');
 

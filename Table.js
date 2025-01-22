@@ -78,7 +78,7 @@ function Table({className=""}) {
                 <td className={tdClassName}><input className='form-check-input' type="checkbox" checked={selectedRows.includes(record[primaryKeyName])} onChange={(e)=>handleCheckOne(e, record[primaryKeyName])} /></td>
                 {
                   columns?.filter(column=>!column?.Comment?.metacrud?.hidden===true).map((column, j) => (
-                    <td key={j} className={tdClassName}>{ record[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ] }</td>
+                    <td key={j} className={tdClassName}>{ wrappers[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column?.Field ]? wrappers[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column?.Field ]("wrapper-"+i+"-"+j, (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column?.Field ,record) : record[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column?.Field ] }</td>
                   ))
                 }
               </tr>
@@ -90,7 +90,7 @@ function Table({className=""}) {
                         columns?.filter(column=>column?.Comment?.metacrud?.hidden===true).map((column, j) => (
                           <div key={j} className='d-flex align-items-start'>
                             <span className='fw-bold'>{column?.Comment?.metacrud?.label??column?.Field}: </span>
-                            <span className='ms-1'>{ wrappers[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ]? wrappers[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ](record[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ]) : record[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ] }</span>
+                            <span className='ms-1'>{ wrappers[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ]? wrappers[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ]("wrapper-"+i+"-"+j, (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ,record) : record[ (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field ] }</span>
                           </div>
                         ))
                       }
