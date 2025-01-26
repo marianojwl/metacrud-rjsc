@@ -11,7 +11,9 @@ function Pagination({className}) {
 
   return (
     <div className={'MetaCrudPagination justify-content-center '+className}>
-      <button className='btn btn-secondary me-2' onClick={()=>setPage(page-1)} disabled={page===1}>&lt;</button>
+      <button className='btn px-0 pt-2 pb-0 btn-secondary me-2' onClick={()=>setPage(page-1)} disabled={page===1}>
+        <span className='material-symbols-outlined'>keyboard_arrow_left</span>
+      </button>
       <select className='form-select me-2 w-auto d-inline' value={page} onChange={e=>setPage(Number(e.target.value))}>
         {
           pages.map((p, i) => (
@@ -19,7 +21,9 @@ function Pagination({className}) {
           ))
         }
       </select>
-      <button className='btn btn-secondary' onClick={()=>setPage(page+1)} disabled={records_data_hook?.response?.data?.length<pageLimit}>&gt;</button>
+      <button className='btn px-0 pt-2 pb-0 btn-secondary' onClick={()=>setPage(page+1)} disabled={records_data_hook?.response?.data?.length<pageLimit}>
+        <span className='material-symbols-outlined'>keyboard_arrow_right</span>
+      </button>
       <select className='form-select ms-2 w-auto d-inline' value={pageLimit} onChange={e=>{setPageLimit(Number(e.target.value)); setPage(1)}}>
         {
           [10, 20, 50, 100].map((limit, i) => (

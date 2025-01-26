@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 
 function useApi(endpoint, query='', auto=false, dependencies=[], callback=null) {
   const [response, setResponse] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [count, setCount] = useState(0);
 
   const handleFecthError = (e) => {
     alert('Error de conexión.  No se pudo completar la solicitud.  Verifique su conexión a internet y, si el problema persiste, contacte al administrador del sistema.');
@@ -45,7 +46,9 @@ function useApi(endpoint, query='', auto=false, dependencies=[], callback=null) 
   const put = async (body) => post(body, 'PUT');
 
   useEffect(() => {
-    if(auto) get(query);
+    if(count === 0 && !auto) return;
+    setCount(prev=>prev+1);
+    get(query);
   }, dependencies);
 
   return { response, loading, get, post, put };

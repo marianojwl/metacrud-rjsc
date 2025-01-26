@@ -2,6 +2,7 @@ import React from 'react'
 import {MetaCrudContext} from './MetaCrud'
 import useApi from './useApi';
 import Select from './Select';
+import FormInput from './FormInput';
 
 function Form() {
 
@@ -19,7 +20,7 @@ function Form() {
 
   React.useEffect(() => {
     if(section !== 'update') return;
-    setData(record_hook?.response?.data[0]??{});
+    setData(record_hook?.response?.data?.rows[0]??{});
   }, [record_hook?.response?.data, section]);
   
 
@@ -91,10 +92,14 @@ function Form() {
   }
 
   return ( (section === 'update' && record_hook?.loading) ? <div className='spinner-border spinner-border-sm text-primary'></div> :
-    <div className='MetaCrudForm' onSubmit={e=>e.preventDefault()}>
-      <form disabled={post_hook?.loading}>
+    <div className='MetaCrudForm'>
+      <form disabled={post_hook?.loading} onSubmit={handleGuardar}>
       {
         columns?.map((column, i) => {
+          return (
+            <FormInput key={"FormInput-"+i} i={i} column={column} data={data} onChange={onChange} />
+          )
+          /*
           const metacrud = column?.Comment?.metacrud;
           let [type, lenght] = column?.Type.split('(');
           if(lenght) lenght = lenght.slice(0, -1);
@@ -107,6 +112,7 @@ function Form() {
           const disabled = column?.Key === 'PRI';
 
           return inputElement(column, i);
+          */
       })
       }
       <button className='btn btn-primary mt-2 me-2' onClick={handleGuardar}>Guardar</button>

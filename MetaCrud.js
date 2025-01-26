@@ -9,6 +9,13 @@ export const MetaCrudContext = createContext();
 
 function MetaCrud({tablename, api_url, user_roles, extra_columns=[], wrappers={}, defaultOrderBy=1, defaultOrderDir="ASC"}) {
   // SECTIONS
+  const sections = {
+    "read": { "action":"", "label":"Tabla", "buttonClassName":"secondary", "icon":"table" },
+    "create": { "action":"create", "label":"Nuevo", "buttonClassName":"success", "icon":"add" },
+    "duplicate": { "action":"create", "label":"Duplicar", "buttonClassName":"success", "icon":"content_copy" },
+    "update": { "action":"update", "label":"Editar", "buttonClassName":"warning",  "icon":"edit" },
+    "delete": { "action":"delete", "label":"Eliminar", "buttonClassName":"danger", "icon":"delete" }
+  };
   const [section, setSection] = useState('read');
   
   // SELECTED ROWS
@@ -56,14 +63,28 @@ function MetaCrud({tablename, api_url, user_roles, extra_columns=[], wrappers={}
   const [orderBy, setOrderBy] = useState(defaultOrderBy);
   const [orderDir, setOrderDir] = useState(defaultOrderDir);
 
+  // FILTERS
+  const [filters, setFilters] = useState({});
+
   // HOOKS
   const columns_data_hook = useApi(api_url + '/meta/' + tablename + '/columns', '', true);
+
+  const columns = columns_data_hook?.response?.data;
+
+  const numberOfHiddenColumns = columns?.filter(column=>column?.Comment?.metacrud?.hidden===true)?.length || 0;
+  
+  const primaryKeyName = columns?.find(column => column?.Key === 'PRI')?.Field;
 
   const table_data_hook = useApi(api_url + '/meta/' + tablename + '/table', '', true, [reloads]);
 
   const records_data_hook = useApi(api_url + '/crud/' + tablename, '', false, [reloads], getCallback);
 
-  const query = '?page='+page+'&limit='+pageLimit+'&sort='+orderBy+'&order='+orderDir + (search!==''?'&search='+search:'');
+  const query = '?page='+page
+              + '&limit='+pageLimit
+              +'&sort='+orderBy
+              +'&order='+orderDir 
+              + ( Object.keys(filters).length ? '&'+Object.keys(filters).map(key => filters[key]?.map(value => key+'[]='+value).join('&')).join('&') : '')
+              + (search!==''?'&search='+search:'');
 
   useEffect(() => {
     records_data_hook?.get(query);
@@ -77,18 +98,19 @@ function MetaCrud({tablename, api_url, user_roles, extra_columns=[], wrappers={}
 
   
   return ( table_data_hook?.loading ? <div className='spinner-border spinner-border-sm text-primary'></div> :
-    <MetaCrudContext.Provider value={{extra_columns, wrappers, search, setSearch, orderBy, orderDir, setOrderBy, setOrderDir, apiCallback, setLastResult, table_meta, table_status, user_roles, page, setPage, pageLimit, setPageLimit, doReload, selectedRows, setSelectedRows, section, setSection, table_data_hook, columns_data_hook, records_data_hook, tablename, api_url}}>
-      <div className='border rounded px-3 py-2'>
-        <h3 className='border-bottom ps-1 pt-2 pb-2'>{table_meta?.title??table_status?.Name}</h3>
+    <MetaCrudContext.Provider value={{filters, setFilters, sections, columns, numberOfHiddenColumns, primaryKeyName, extra_columns, wrappers, search, setSearch, orderBy, orderDir, setOrderBy, setOrderDir, apiCallback, setLastResult, table_meta, table_status, user_roles, page, setPage, pageLimit, setPageLimit, doReload, selectedRows, setSelectedRows, section, setSection, table_data_hook, columns_data_hook, records_data_hook, tablename, api_url}}>
+      <div className='px-1 py-1'>
+        <h3 className='border-bottom ps-1 pt-2 pb-2 mb-2'>{table_meta?.title??table_status?.Name}</h3>
         { (section === 'read' && lastResult && (lastResult?.message || lastResult?.error)) &&
           <div className={'my-1 px-2 py-1 alert alert-'+(lastResult?.success?'success':'warning')}>
             {lastResult?.message} {lastResult?.error}
           </div>
         }
-        <ActionBar className='my-2' />
+        <ActionBar className='my-0' />
         { section === 'read' && <Table /> }
         { section === 'create' && <Form /> }
         { section === 'update' && <Form /> }
+        { section === 'duplicate' && <DeleteConfirm /> }
         { section === 'delete' && <DeleteConfirm /> }
       </div>
       

@@ -1,8 +1,9 @@
 import React from 'react'
 import {MetaCrudContext} from './MetaCrud'
 import useApi from './useApi';
+import Loading from './Loading';
 
-function Select({column, data, onChange, disabled, isValid}) {
+function Select({column, data, onChange, disabled, isValid, autoFocus=false}) {
 
   const {tablename, api_url} = React.useContext(MetaCrudContext);
 
@@ -13,16 +14,17 @@ function Select({column, data, onChange, disabled, isValid}) {
 
   const options_hook = useApi(api_url + '/crud/' + (kDb?kDb+'.':'') + kTab + '?limit=1000&sort='+vCol+'&cols[]='+kCol+'&cols[]='+vCol, '', true);
 
-  return ( options_hook?.loading ? <div className='spinner-border spinner-border-sm text-primary'></div> :
+  return ( options_hook?.loading ? <Loading /> :
     <select 
       className={'form-select'+(disabled?'':(metacrud?.regex_pattern?(isValid?' is-valid':' is-invalid'):''))}
       disabled={disabled}
       name={column.Field} 
       value={data[column.Field]} 
+      autoFocus={autoFocus}
       onChange={onChange}>
       <option value=''>Seleccione...</option>
       {
-        options_hook?.response?.data?.map((option, i) => <option key={i} value={option[kCol]}>{option[vCol]}</option>)
+        options_hook?.response?.data?.rows?.map((option, i) => <option key={i} value={option[kCol]}>{option[vCol]}</option>)
       }
   </select>
   )
