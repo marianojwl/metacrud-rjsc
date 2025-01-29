@@ -6,7 +6,7 @@ import FormInput from './FormInput';
 
 function Form() {
 
-  const { setLastResult, setSection, apiCallback, api_url, tablename, selectedRows, section, columns_data_hook, records_data_hook}  = React.useContext(MetaCrudContext);
+  const { createCallbacks, updateCallbacks, setLastResult, setSection, apiCallback, api_url, tablename, selectedRows, section, columns_data_hook, records_data_hook}  = React.useContext(MetaCrudContext);
   
   const editing_rercord_id = selectedRows[0]??null;
 
@@ -14,7 +14,7 @@ function Form() {
 
   const post_hook = useApi(api_url + '/crud/' + tablename, '', false, [], apiCallback);
 
-  const columns = columns_data_hook?.response?.data;
+  const columns = columns_data_hook?.response?.data?.sort((a, b) => b?.Comment?.metacrud?.order??0 - a?.Comment?.metacrud?.order??0)??[];
 
   const [data, setData] = React.useState({});
 
@@ -82,11 +82,11 @@ function Form() {
     e.target.innerText = '...';
 
     if(section === 'create') {
-      post_hook.post(data);
+      post_hook.post(data, createCallbacks);
     }
 
     if(section === 'update') {
-      post_hook.put(data);
+      post_hook.put(data, updateCallbacks);
     }
 
   }

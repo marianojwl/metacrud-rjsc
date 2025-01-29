@@ -4,7 +4,7 @@ import {MetaCrudContext} from './MetaCrud'
 function Pagination({className}) {
   const {table_status, records_data_hook, page, setPage, pageLimit, setPageLimit} = React.useContext(MetaCrudContext);
 
-  const aproxRowCount = table_status?.Rows;
+  const aproxRowCount = table_status?.Rows??1;
 
   // array with page numbers 1 to aproxRowCount/pageLimit
   const pages = Array.from({length: 1+Math.ceil(aproxRowCount/pageLimit)}, (_, i) => i+1);

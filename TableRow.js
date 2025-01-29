@@ -11,7 +11,7 @@ function TableRow({columns, i, record, tdClassName, handleCheckOne}) {
   const [rec, setRec] = React.useState(record);
 
   const getCallback = React.useCallback((json) => {
-    setRec(json?.data[0]??{});
+    setRec(json?.data?.rows[0]??{});
   }, []);
 
   const row_hook = useApi(api_url + '/crud/' + tablename + '/' + rec[primaryKeyName], '', false, [], getCallback);

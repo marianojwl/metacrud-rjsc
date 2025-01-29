@@ -12,7 +12,7 @@ export const TableContext = React.createContext();
 
 function Table({className=""}) {
   const {numberOfHiddenColumns, extra_columns, wrappers, orderBy, orderDir, setOrderBy, setOrderDir, selectedRows, setSelectedRows, columns_data_hook, records_data_hook} = React.useContext(MetaCrudContext);
-  const columns = columns_data_hook?.response?.data;
+  const columns = columns_data_hook?.response?.data?.sort((a, b) => b?.Comment?.metacrud?.order??0 - a?.Comment?.metacrud?.order??0)??[];
   const records = records_data_hook?.response?.data?.rows;
 
   

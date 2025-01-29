@@ -23,7 +23,7 @@ function ActionBar({className=""}) {
           //const disabled = section===action || (action==='update' && selectedRows?.length!==1) || (action==='delete' && selectedRows?.length===0);
           const disabled = section===sec || ((sec==='update' || sec==='duplicate') && selectedRows?.length!==1) || (sec==='delete' && selectedRows?.length===0);
           return (
-            <button key={action} disabled={disabled} className={'btn me-2 mb-2 btn-'+(disabled?'outline-':'')+sections[sec].buttonClassName} onClick={()=>setSection(sec)}><span className="material-symbols-outlined me-1" style={{verticalAlign:"text-bottom"}}>{sections[sec]?.icon}</span>{sections[sec].label}</button>
+            <button key={sec} disabled={disabled} className={'btn me-2 mb-2 btn-'+(disabled?'outline-':'')+sections[sec].buttonClassName} onClick={()=>setSection(sec)}><span className="material-symbols-outlined me-1" style={{verticalAlign:"text-bottom"}}>{sections[sec]?.icon}</span><span className='d-none d-md-inline-block'>{sections[sec].label}</span></button>
           );
         })
       }

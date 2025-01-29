@@ -24,7 +24,7 @@ function useApi(endpoint, query='', auto=false, dependencies=[], callback=null) 
     }
   }
 
-  const post = async (body, method='POST') => {
+  const post = async (body, callbacks=[], method='POST') => {
     setLoading(true);
     try {
       const res = await fetch(endpoint, {
@@ -35,6 +35,7 @@ function useApi(endpoint, query='', auto=false, dependencies=[], callback=null) 
       const json = await res.json();
       setResponse(json);
       if(callback) callback(json);
+      callbacks.forEach(cb => cb());
     } catch(e){
       handleFecthError(e);
       if(callback) callback({ success:false, message:'Algo salió mal' });
@@ -43,12 +44,16 @@ function useApi(endpoint, query='', auto=false, dependencies=[], callback=null) 
     }
   }
 
-  const put = async (body) => post(body, 'PUT');
+  const put = async (body, callbacks=[]) => post(body, callbacks, 'PUT');
 
   useEffect(() => {
+    //console.log('useEffect useApi + ' + endpoint);
     if(count === 0 && !auto) return;
-    setCount(prev=>prev+1);
-    get(query);
+    setCount(prev=>{
+      get(query);
+      return prev+1;
+    });
+    // get(query);
   }, dependencies);
 
   return { response, loading, get, post, put };

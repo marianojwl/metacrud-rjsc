@@ -4,17 +4,19 @@ import Table from './Table';
 import ActionBar from './ActionBar';
 import Form from './Form';
 import DeleteConfirm from './DeleteConfirm';
+import Config from './Config';
 
 export const MetaCrudContext = createContext();
 
-function MetaCrud({tablename, api_url, user_roles, extra_columns=[], wrappers={}, defaultOrderBy=1, defaultOrderDir="ASC"}) {
+function MetaCrud({createCallbacks=[], updateCallbacks=[], deleteCallbacks=[], tablename, api_url, user_roles, extra_columns=[], wrappers={}, defaultOrderBy=1, defaultOrderDir="ASC"}) {
   // SECTIONS
   const sections = {
     "read": { "action":"", "label":"Tabla", "buttonClassName":"secondary", "icon":"table" },
     "create": { "action":"create", "label":"Nuevo", "buttonClassName":"success", "icon":"add" },
     "duplicate": { "action":"create", "label":"Duplicar", "buttonClassName":"success", "icon":"content_copy" },
     "update": { "action":"update", "label":"Editar", "buttonClassName":"warning",  "icon":"edit" },
-    "delete": { "action":"delete", "label":"Eliminar", "buttonClassName":"danger", "icon":"delete" }
+    "delete": { "action":"delete", "label":"Eliminar", "buttonClassName":"danger", "icon":"delete" },
+    "config": { "action":"config", "label":"", "buttonClassName":"tertiary", "icon":"settings" }
   };
   const [section, setSection] = useState('read');
   
@@ -77,7 +79,7 @@ function MetaCrud({tablename, api_url, user_roles, extra_columns=[], wrappers={}
 
   const table_data_hook = useApi(api_url + '/meta/' + tablename + '/table', '', true, [reloads]);
 
-  const records_data_hook = useApi(api_url + '/crud/' + tablename, '', false, [reloads], getCallback);
+  const records_data_hook = useApi(api_url + '/crud/' + tablename, '', true, [reloads], getCallback);
 
   const query = '?page='+page
               + '&limit='+pageLimit
@@ -98,9 +100,12 @@ function MetaCrud({tablename, api_url, user_roles, extra_columns=[], wrappers={}
 
   
   return ( table_data_hook?.loading ? <div className='spinner-border spinner-border-sm text-primary'></div> :
-    <MetaCrudContext.Provider value={{filters, setFilters, sections, columns, numberOfHiddenColumns, primaryKeyName, extra_columns, wrappers, search, setSearch, orderBy, orderDir, setOrderBy, setOrderDir, apiCallback, setLastResult, table_meta, table_status, user_roles, page, setPage, pageLimit, setPageLimit, doReload, selectedRows, setSelectedRows, section, setSection, table_data_hook, columns_data_hook, records_data_hook, tablename, api_url}}>
+    <MetaCrudContext.Provider value={{filters, setFilters, sections, columns, numberOfHiddenColumns, primaryKeyName, extra_columns, wrappers, search, setSearch, orderBy, orderDir, setOrderBy, setOrderDir, apiCallback, setLastResult, table_meta, table_status, user_roles, page, setPage, pageLimit, setPageLimit, doReload, selectedRows, setSelectedRows, section, setSection, table_data_hook, columns_data_hook, records_data_hook, tablename, api_url, createCallbacks, updateCallbacks, deleteCallbacks}}>
       <div className='px-1 py-1'>
+      {table_meta?.title ?
         <h3 className='border-bottom ps-1 pt-2 pb-2 mb-2'>{table_meta?.title??table_status?.Name}</h3>
+        : null
+      }
         { (section === 'read' && lastResult && (lastResult?.message || lastResult?.error)) &&
           <div className={'my-1 px-2 py-1 alert alert-'+(lastResult?.success?'success':'warning')}>
             {lastResult?.message} {lastResult?.error}
@@ -112,6 +117,7 @@ function MetaCrud({tablename, api_url, user_roles, extra_columns=[], wrappers={}
         { section === 'update' && <Form /> }
         { section === 'duplicate' && <DeleteConfirm /> }
         { section === 'delete' && <DeleteConfirm /> }
+        { section === 'config' && <Config /> }
       </div>
       
     </MetaCrudContext.Provider>
