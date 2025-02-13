@@ -9,16 +9,18 @@ function useApi(endpoint, query='', auto=false, dependencies=[], callback=null) 
     alert('Error de conexión.  No se pudo completar la solicitud.  Verifique su conexión a internet y, si el problema persiste, contacte al administrador del sistema.');
   }
 
-  const get = async (query='') => {
+  const get = async (query='', callbacks=[]) => {
     setLoading(true);
     try{
       const res = await fetch(endpoint + query);
       const json = await res.json();
       setResponse(json);
       if(callback) callback(json);
+      callbacks.forEach(cb => cb(json));
     } catch(e){
       handleFecthError(e);
       if(callback) callback({ success:false, message:'Algo salió mal' });
+      callbacks.forEach(cb => cb({ success:false, message:'Algo salió mal' }));
     } finally {
       setLoading(false);
     }
@@ -35,7 +37,7 @@ function useApi(endpoint, query='', auto=false, dependencies=[], callback=null) 
       const json = await res.json();
       setResponse(json);
       if(callback) callback(json);
-      callbacks.forEach(cb => cb());
+      callbacks.forEach(cb => cb(json));
     } catch(e){
       handleFecthError(e);
       if(callback) callback({ success:false, message:'Algo salió mal' });

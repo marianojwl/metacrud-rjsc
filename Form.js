@@ -6,7 +6,7 @@ import FormInput from './FormInput';
 
 function Form() {
 
-  const { createCallbacks, updateCallbacks, setLastResult, setSection, apiCallback, api_url, tablename, selectedRows, section, columns_data_hook, records_data_hook}  = React.useContext(MetaCrudContext);
+  const { restrictions, createCallbacks, updateCallbacks, setLastResult, setSection, apiCallback, api_url, tablename, selectedRows, section, columns_data_hook, records_data_hook}  = React.useContext(MetaCrudContext);
   
   const editing_rercord_id = selectedRows[0]??null;
 
@@ -17,6 +17,8 @@ function Form() {
   const columns = columns_data_hook?.response?.data?.sort((a, b) => b?.Comment?.metacrud?.order??0 - a?.Comment?.metacrud?.order??0)??[];
 
   const [data, setData] = React.useState({});
+
+  const [formResult, setFormResult] = React.useState(null);
 
   React.useEffect(() => {
     if(section !== 'update') return;
@@ -68,7 +70,7 @@ function Form() {
             type={metacrud?.inputType??inputType(type)} 
             maxLength={lenght}
             name={column.Field} 
-            value={data[column.Field]} 
+            value={data[column.Field] || ''}
             onChange={onChange} />
         </div>);
         break;
@@ -76,13 +78,21 @@ function Form() {
     }
   };
 
+  const reEnableButton = (e, label='Guardar') => {
+    e.target.disabled = false;
+    e.target.innerText = label;
+  }
+
   const handleGuardar = (e) => {
     e.preventDefault();
     e.target.disabled = true;
     e.target.innerText = '...';
 
     if(section === 'create') {
-      post_hook.post(data, createCallbacks);
+      post_hook.post(data, [
+        (json) => { if(!json?.success) { reEnableButton(e); setFormResult(json); } },
+        ...createCallbacks
+      ]);
     }
 
     if(section === 'update') {
@@ -93,6 +103,11 @@ function Form() {
 
   return ( (section === 'update' && record_hook?.loading) ? <div className='spinner-border spinner-border-sm text-primary'></div> :
     <div className='MetaCrudForm'>
+      { formResult && (formResult?.message || formResult?.error) &&
+        <div className={'my-1 px-2 py-1 alert alert-'+(formResult?.success?'success':'warning')}>
+          {formResult?.message} {formResult?.error}
+        </div>
+      }
       <form disabled={post_hook?.loading} onSubmit={handleGuardar}>
       {
         columns?.map((column, i) => {

@@ -1,9 +1,9 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import {MetaCrudContext} from './MetaCrud'
 import Pagination from './Pagination';
-import FilterIcon from './icons/FilterIcon';
-import ArrowIcon from './icons/ArrowIcon';
-import TableCell from './TableCell';
+// import FilterIcon from './icons/FilterIcon';
+// import ArrowIcon from './icons/ArrowIcon';
+// import TableCell from './TableCell';
 import TableRowExpansion from './TableRowExpansion';
 import TableRow from './TableRow';
 import TableHeader from './TableHeader';
@@ -11,15 +11,45 @@ import TableHeader from './TableHeader';
 export const TableContext = React.createContext();
 
 function Table({className=""}) {
-  const {numberOfHiddenColumns, extra_columns, wrappers, orderBy, orderDir, setOrderBy, setOrderDir, selectedRows, setSelectedRows, columns_data_hook, records_data_hook} = React.useContext(MetaCrudContext);
-  const columns = columns_data_hook?.response?.data?.sort((a, b) => b?.Comment?.metacrud?.order??0 - a?.Comment?.metacrud?.order??0)??[];
+  const {table_data_hook, view, numberOfHiddenColumns, extra_columns, wrappers, orderBy, orderDir, setOrderBy, setOrderDir, selectedRows, setSelectedRows, columns_data_hook, records_data_hook} = React.useContext(MetaCrudContext);
+  
+
+  //console.log(table_data_hook);
+  // {"title":"Sugerencias de Asociaciones entre Películas y Shows","views":{"sugerencias":{"regularColumnsOverride":{"updated":{"hidden":true}}, "expressions":[{"statement":"s.ShowId","alias":"ShowId_sugerido","label":"Show Id","isAggregate":false},{"statement":"s.Name","alias":"ShowName_sugerido","label":"Show Name","isAggregate":false},{"statement":"p.id","alias":"pid","label":"Pelicula Id","isAggregate":false},{"statement":"p.titulo_local","alias":"PeliculaTitulo_sugerida","label":"Pelicula Titulo","isAggregate":false}],"joints":["RIGHT JOIN ewave_cca.shows s ON peliculas_shows.ewave_shows_ShowId = s.ShowId","RIGHT JOIN ewave_cca.prefijos_shows ps ON s.Name LIKE CONCAT(ps.prefijo, '%')","RIGHT JOIN muvidb.peliculas p ON s.Name = CONCAT(ps.prefijo, ' ', p.titulo_local)"]}}}
+  const metacrudView = view ? (table_data_hook?.response?.data?.Comment?.metacrud?.views[view]??null) : null;
+
+  const colorRefs = table_data_hook?.response?.data?.Comment?.metacrud?.colorRefs??{};
+
+  const viewOverrides = metacrudView?.regularColumnsOverride??{};
+
+  const viewColumns = metacrudView?.columns??[];
+
+  //const regularColumns = (columns_data_hook?.response?.data?.map(column => ({...column, Comment: {metacrud: {...(column?.Comment?.metacrud??{}), ...viewOverrides[column?.Field]}}}))??[]);
+
+  const mappedRegularColumns = useMemo(() => (columns_data_hook?.response?.data?.map(column => ({...column, Comment: {metacrud: {...(column?.Comment?.metacrud??{}), ...viewOverrides[column?.Field]}}}))??[]), [(columns_data_hook?.response?.data), (viewOverrides)]);
+
+  const mappedViewColumns = useMemo(() => viewColumns?.map(e=>({Field: e?.a, Comment: {metacrud: {...e}}})), [(viewColumns)]);
+
+  //const columns = [ ...mappedRegularColumns, ...mappedViewColumns]?.sort((a, b) => b?.Comment?.metacrud?.order??0 - a?.Comment?.metacrud?.order??0);
+
+  const columns = useMemo(() => [ ...mappedRegularColumns, ...mappedViewColumns]?.sort((a, b) => b?.Comment?.metacrud?.order??0 - a?.Comment?.metacrud?.order??0), [(mappedRegularColumns), (mappedViewColumns)]);
+  
+  //const startCollapsedColumns = columns?.filter(column => column?.Comment?.metacrud?.startCollapsed===true).map(column => column?.Field)??[];
+
+  const startCollapsedColumns = useMemo(() => columns?.filter(column => column?.Comment?.metacrud?.startCollapsed===true).map(column => column?.Field)??[], [(columns)]);
+
+  const [collapsedColumns, setCollapsedColumns] = React.useState([...startCollapsedColumns]);
+  
+
   const records = records_data_hook?.response?.data?.rows;
 
   
 
   const rowsShowing = records;
 
-  const primaryKeyName = columns?.find(column => column?.Key === 'PRI')?.Field;
+  //const primaryKeyName = columns?.find(column => column?.Key === 'PRI')?.Field;
+
+  const primaryKeyName = useMemo(() => columns?.find(column => column?.Key === 'PRI')?.Field, [(columns)]);
 
 
   const handleCheckAll = (e) => {
@@ -49,17 +79,27 @@ function Table({className=""}) {
     }
   };
 
+  const unhiddenColumns = useMemo(() => columns?.filter(column=>!column?.Comment?.metacrud?.hidden===true), [(columns)]);
+
 
   return ( (columns_data_hook?.loading || records_data_hook?.loading ) ? <div className='spinner-border spinner-border-sm text-primary'></div> : 
-  <TableContext.Provider value={{expandedRows, setExpandedRows, handleExpandRow}}>
+  <TableContext.Provider value={{unhiddenColumns, colorRefs, collapsedColumns, setCollapsedColumns, expandedRows, setExpandedRows, handleExpandRow}}>
     <div className={'MetaCrudTable '+className}>
+      <div className='colorRefs mb-2 d-flex flex-wrap'>
+        {
+          Object.keys(colorRefs).map((key, i) => (
+            <div key={"colorRef-"+i} className='me-2'><span className='badge me-2' style={{backgroundColor: colorRefs[key]?.c}}>&nbsp;</span>{colorRefs[key]?.l}</div>
+          ))
+        }
+      </div>
       <div className={'table-responsive w-auto'}>
         <table className='table w-auto table-striped table-hover m-0 border border-tertiary border-1'>
           <thead>
             <tr>
               <th className='px-1 px-2 text-center'><input className='form-check-input' type="checkbox" onChange={handleCheckAll} /></th>
               {
-                columns?.filter(column=>!column?.Comment?.metacrud?.hidden===true).map((column, i) => (
+                //columns?.filter(column=>!column?.Comment?.metacrud?.hidden===true)
+                unhiddenColumns.map((column, i) => (
                   <TableHeader key={"TableHeader-"+i} column={column} i={i} setOrderBy={setOrderBy} setOrderDir={setOrderDir} orderBy={orderBy} orderDir={orderDir} />
                 ))
               }
@@ -88,7 +128,7 @@ function Table({className=""}) {
                 const tdClassName = (expandedRows?.includes(record[primaryKeyName]) ? 'bg-primary text-light ' : '')+'p-2';
                 return (
                 <React.Fragment key={"TableRowF-"+i}>
-                  <TableRow handleCheckOne={handleCheckOne} columns={columns} key={"TableRow-"+i} record={record} i={i} tdClassName={tdClassName} handleExpandRow={handleExpandRow} />
+                  <TableRow key={"TableRow-"+i} handleCheckOne={handleCheckOne} columns={columns} record={record} i={i} tdClassName={tdClassName} handleExpandRow={handleExpandRow} />
                 {
                   (numberOfHiddenColumns && expandedRows?.includes(record[primaryKeyName])) ? (
                     <TableRowExpansion key={"TableRowExpansion-"+i} record={record} />

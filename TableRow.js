@@ -6,8 +6,8 @@ import useApi from './useApi';
 import Loading from './Loading';
 
 function TableRow({columns, i, record, tdClassName, handleCheckOne}) {
-  const { extra_columns, api_url, tablename, selectedRows, setSelectedRows, numberOfHiddenColumns, primaryKeyName} = React.useContext(MetaCrudContext);
-  const {expandedRows, handleExpandRow} = React.useContext(TableContext);
+  const { extra_columns, api_url, tablename, selectedRows, setSelectedRows, numberOfHiddenColumns, primaryKeyName, query} = React.useContext(MetaCrudContext);
+  const {unhiddenColumns, collapsedColumns, setCollapsedColumns, expandedRows, handleExpandRow} = React.useContext(TableContext);
   const [rec, setRec] = React.useState(record);
 
   const getCallback = React.useCallback((json) => {
@@ -25,7 +25,8 @@ function TableRow({columns, i, record, tdClassName, handleCheckOne}) {
     <tr>
       <td className={tdClassName}><input className='form-check-input' type="checkbox" checked={selectedRows.includes(rec[primaryKeyName])} onChange={(e)=>handleCheckOne(e, rec[primaryKeyName])} /></td>
       {
-        columns?.filter(column=>!column?.Comment?.metacrud?.hidden===true).map((column, j) => ( row_hook?.loading ? <td><Loading /></td> :
+        unhiddenColumns.map((column, j) => ( row_hook?.loading ? <td key={"td-loading-"+i+"-"+j}><Loading /></td> :
+          collapsedColumns?.includes(column?.Field) ? <td key={"td-collapsed-"+i+"-"+j} className='bg-secondary'></td> :
           <TableCell key={"TableCell-"+i+"-"+j} i={i} j={j} column={column} record={rec} tdClassName={tdClassName} apiCallback={apiCallback} />
         ))
       }

@@ -5,7 +5,7 @@ import Loading from './Loading';
 
 function Select({column, data, onChange, disabled, isValid, autoFocus=false}) {
 
-  const {tablename, api_url} = React.useContext(MetaCrudContext);
+  const {restrictions, section, tablename, api_url} = React.useContext(MetaCrudContext);
 
   const metacrud = column?.Comment?.metacrud;
 
@@ -24,7 +24,7 @@ function Select({column, data, onChange, disabled, isValid, autoFocus=false}) {
       onChange={onChange}>
       <option value=''>Seleccione...</option>
       {
-        options_hook?.response?.data?.rows?.map((option, i) => <option key={i} value={option[kCol]}>{option[vCol]}</option>)
+        options_hook?.response?.data?.rows?.filter(option => !restrictions?.[section] || !restrictions?.[section]?.[column.Field] || restrictions?.[section]?.[column.Field]?.includes(option[kCol]))?.map((option, i) => <option key={i} value={option[kCol]}>{option[vCol]}</option>)
       }
   </select>
   )

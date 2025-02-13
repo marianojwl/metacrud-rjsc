@@ -2,16 +2,23 @@ import React from 'react'
 import ArrowIcon from './icons/ArrowIcon';
 import FilterIcon from './icons/FilterIcon';
 import SelectMultiple from './SelectMultiple';
+import {TableContext} from './Table';
+import {MetaCrudContext} from './MetaCrud';
 
 
 function TableHeader({column, i, setOrderBy, setOrderDir, orderBy, orderDir, showControls=true}) {
-  const [filtering, setFiltering] = React.useState(false)
-  return (
-    <th>
+  const {collapsedColumns, setCollapsedColumns, colorRefs} = React.useContext(TableContext);
+  const {filters} = React.useContext(MetaCrudContext);
+  const [filtering, setFiltering] = React.useState(false);
+  const recordKey = column?.Field;
+  const colorRef = column?.Comment?.metacrud?.colorRef;
+  return ( collapsedColumns?.includes(recordKey) ? <th style={{borderBottom: colorRef ? '4px solid '+colorRefs[colorRef]?.c : null}} className='p-0 bg-secondary'><button title="Mostrar" onClick={()=>setCollapsedColumns(collapsedColumns.filter(c=>c!==recordKey))} className='btn btn-sm px-2 py-0 m-0 text-nowrap'  style={{width: '1.5rem'}}
+  ><div className='d-flex' style={{transform: 'rotate(270deg) translateX(50%)', whiteSpace: 'nowrap'}}><span className='material-symbols-outlined fs-5 me-1'>visibility</span>{Object.keys(filters).includes(column?.Field)?<span className='material-symbols-outlined fs-5 me-1 text-danger'>filter_list</span>:null} {(column?.Comment?.metacrud?.label??column?.Field)}</div></button></th> :
+    <th style={{borderBottom: colorRef ? '4px solid '+colorRefs[colorRef]?.c : null}} >
       <div className='align-items-start'>
         <div>
           <div style={{whiteSpace:'nowrap'}} className='text-nowrap'>
-            {column?.Comment?.metacrud?.label??column?.Field}
+            <span title={column?.Comment?.metacrud?.description??null}>{column?.Comment?.metacrud?.label??column?.Field}</span>
             { showControls &&
               <SelectMultiple disabled={!(column?.Comment?.metacrud?.foreign_key && column?.Comment?.metacrud?.foreign_value )} column={column} />
             }
@@ -30,6 +37,23 @@ function TableHeader({column, i, setOrderBy, setOrderDir, orderBy, orderDir, sho
               disabled={(orderBy === (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_') ?? column.Field)) && orderDir === 'DESC'}
               onClick={()=>{setOrderBy((column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_') ?? column.Field)); setOrderDir('DESC')}} 
               className='btn btn-sm px-1 py-0 ms-1 d-inline text-secondary'><ArrowIcon dir='down' /></button>
+            {
+              collapsedColumns?.includes(recordKey) ?
+              <button 
+                title="Mostrar Columna"
+                onClick={()=>setCollapsedColumns(collapsedColumns.filter(c=>c!==recordKey))} 
+                className='btn btn-sm px-1 py-0 ms-1 d-inline text-secondary'>
+                  <span className='material-symbols-outlined fs-5'>visibility</span>
+                </button>
+              :
+              <button 
+                title="Ocultar Columna"
+                onClick={()=>setCollapsedColumns([...collapsedColumns, recordKey])} 
+                className='btn btn-sm px-1 py-0 ms-1 d-inline text-secondary'>
+                  <span className='material-symbols-outlined fs-5'>visibility_off</span>
+                </button>
+
+            }
           </> : <div>&nbsp;</div>}
         </div>
       </div>

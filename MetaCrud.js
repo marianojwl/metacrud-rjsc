@@ -1,4 +1,4 @@
-import React, {useState, useEffect, createContext} from 'react';
+import React, {useState, useEffect, createContext, useMemo} from 'react';
 import useApi from './useApi';
 import Table from './Table';
 import ActionBar from './ActionBar';
@@ -8,7 +8,7 @@ import Config from './Config';
 
 export const MetaCrudContext = createContext();
 
-function MetaCrud({createCallbacks=[], updateCallbacks=[], deleteCallbacks=[], tablename, api_url, user_roles, extra_columns=[], wrappers={}, defaultOrderBy=1, defaultOrderDir="ASC"}) {
+function MetaCrud({ defaultPageLimit=10, view=null, hideTableTitle=false, createCallbacks=[], updateCallbacks=[], deleteCallbacks=[], tablename, api_url, user_roles, extra_columns=[], wrappers={}, defaultOrderBy=1, defaultOrderDir="ASC"}) {
   // SECTIONS
   const sections = {
     "read": { "action":"", "label":"Tabla", "buttonClassName":"secondary", "icon":"table" },
@@ -43,7 +43,7 @@ function MetaCrud({createCallbacks=[], updateCallbacks=[], deleteCallbacks=[], t
   // API CALLBACK
   const apiCallback = React.useCallback((r) => {
     setLastResult(r);
-    doReload();
+    if(r?.success) doReload();
   }, []);
 
   const getCallback = React.useCallback((r) => {
@@ -52,7 +52,7 @@ function MetaCrud({createCallbacks=[], updateCallbacks=[], deleteCallbacks=[], t
 
   // PAGINATION
   const [page, setPage] = useState(1);
-  const [pageLimit, setPageLimit] = useState(10);
+  const [pageLimit, setPageLimit] = useState(defaultPageLimit);
 
   // SEARCH
   const [search, setSearch] = useState('');
@@ -73,38 +73,52 @@ function MetaCrud({createCallbacks=[], updateCallbacks=[], deleteCallbacks=[], t
 
   const columns = columns_data_hook?.response?.data;
 
-  const numberOfHiddenColumns = columns?.filter(column=>column?.Comment?.metacrud?.hidden===true)?.length || 0;
+  //const numberOfHiddenColumns = columns?.filter(column=>column?.Comment?.metacrud?.hidden===true)?.length || 0;
+
+  const numberOfHiddenColumns = useMemo(() => columns?.filter(column=>column?.Comment?.metacrud?.hidden===true)?.length || 0, [(columns)]);
   
-  const primaryKeyName = columns?.find(column => column?.Key === 'PRI')?.Field;
+  //const primaryKeyName = columns?.find(column => column?.Key === 'PRI')?.Field;
+
+  const primaryKeyName = useMemo(() => columns?.find(column => column?.Key === 'PRI')?.Field, [(columns)]);
 
   const table_data_hook = useApi(api_url + '/meta/' + tablename + '/table', '', true, [reloads]);
 
-  const records_data_hook = useApi(api_url + '/crud/' + tablename, '', true, [reloads], getCallback);
+  const restrictions = table_data_hook?.response?.data?.Comment?.metacrud?.restrictions??{};
+
+  //const mappedFilters = Object.keys(filters).map(key => filters[key]?.map(value => key+'[]='+value).join('&'));
+
+  const mappedFilters = useMemo(() => Object.keys(filters).map(key => filters[key]?.map(value => key+'[]='+value).join('&')), [(filters)]);
 
   const query = '?page='+page
               + '&limit='+pageLimit
               +'&sort='+orderBy
               +'&order='+orderDir 
-              + ( Object.keys(filters).length ? '&'+Object.keys(filters).map(key => filters[key]?.map(value => key+'[]='+value).join('&')).join('&') : '')
+              + ( view ? '&metacrudView='+view : '')
+              + ( Object.keys(filters).length ? '&'+mappedFilters.join('&') : '')
               + (search!==''?'&search='+search:'');
 
-  useEffect(() => {
-    records_data_hook?.get(query);
-  }, [query]);
+              
+  const records_data_hook = useApi(api_url + '/crud/' + tablename, query, true, [query, reloads], getCallback);
+
+
+  //const reloadRecords = ()=>records_data_hook?.get(query);
+  const reloadRecords = ()=>setReloads(prev => prev + 1);
+  // useEffect(() => {
+  //   records_data_hook?.get(query);
+  // }, [query]);
   //}, [page, pageLimit, orderBy, orderDir, search]);
 
   const table_status = table_data_hook?.response?.data;
 
   const table_meta = table_status?.Comment?.metacrud??{};
 
-
+  const tableTitle = table_meta?.views?.[view]?.title??table_meta?.title??table_status?.Name;
   
   return ( table_data_hook?.loading ? <div className='spinner-border spinner-border-sm text-primary'></div> :
-    <MetaCrudContext.Provider value={{filters, setFilters, sections, columns, numberOfHiddenColumns, primaryKeyName, extra_columns, wrappers, search, setSearch, orderBy, orderDir, setOrderBy, setOrderDir, apiCallback, setLastResult, table_meta, table_status, user_roles, page, setPage, pageLimit, setPageLimit, doReload, selectedRows, setSelectedRows, section, setSection, table_data_hook, columns_data_hook, records_data_hook, tablename, api_url, createCallbacks, updateCallbacks, deleteCallbacks}}>
+    <MetaCrudContext.Provider value={{restrictions, query, reloadRecords, table_data_hook, view, filters, setFilters, sections, columns, numberOfHiddenColumns, primaryKeyName, extra_columns, wrappers, search, setSearch, orderBy, orderDir, setOrderBy, setOrderDir, apiCallback, setLastResult, table_meta, table_status, user_roles, page, setPage, pageLimit, setPageLimit, doReload, selectedRows, setSelectedRows, section, setSection, table_data_hook, columns_data_hook, records_data_hook, tablename, api_url, createCallbacks, updateCallbacks, deleteCallbacks}}>
       <div className='px-1 py-1'>
-      {table_meta?.title ?
-        <h3 className='border-bottom ps-1 pt-2 pb-2 mb-2'>{table_meta?.title??table_status?.Name}</h3>
-        : null
+      { hideTableTitle ? null :
+        <h3 className='border-bottom ps-1 pt-2 pb-2 mb-2'>{tableTitle}</h3>
       }
         { (section === 'read' && lastResult && (lastResult?.message || lastResult?.error)) &&
           <div className={'my-1 px-2 py-1 alert alert-'+(lastResult?.success?'success':'warning')}>

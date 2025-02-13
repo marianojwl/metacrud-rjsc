@@ -1,6 +1,8 @@
 import React from 'react'
 import Loading from './Loading'
 import {MetaCrudContext} from './MetaCrud'
+import ConfigMetaCrudColumn from './ConfigMetaCrudColumn';
+import ConfigMetaCrudTable from './ConfigMetaCrudTable';
 
 function Config() {
   const {columns_data_hook} = React.useContext(MetaCrudContext);
@@ -38,13 +40,20 @@ function Config() {
     const {name, value} = e.target;
     const [Field, key] = name.split('|');
     
-    setColumnsMetacrud(prev=> ({
+    setColumnsMetacrud(prev=> { 
+      let object;
+      try {
+        object = JSON.parse(value);
+      } catch (error) {
+        object = null;
+      }
+      return({
       ...prev,
       [Field]: {
         ...prev[Field],
-        [key]: value === "" ? undefined : JSON.parse(value).catch(()=>value)
+        [key]: value === "" ? undefined : object
       }
-    }));
+    })});
   }
 
   const properties = {
@@ -72,6 +81,7 @@ function Config() {
 
   return ( columns_data_hook?.loading ? <Loading /> :
     <div>
+      <ConfigMetaCrudTable />
       <table className='table table-striped table-hover'>
         <thead>
           <tr>
@@ -92,13 +102,8 @@ function Config() {
           return (
             <tr key={i}>
               <td>{column.Field}</td>
-              <td><textarea 
-                className='form-control'
-                name={column.Field} 
-                value={JSON.stringify(columnsMetacrud[column.Field])}
-                rows={4}
-                cols={40}
-                />
+              <td>
+                <ConfigMetaCrudColumn column={column} columnsMetacrud={columnsMetacrud} />
               </td>
               {
                 Object.keys(properties).map((key, j) => {

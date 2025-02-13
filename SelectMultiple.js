@@ -85,10 +85,10 @@ function SelectMultiple({column, disabled=false}) {
       <div aria-labelledby='dropdownMenuLink' className='border border-top border-bottom border-tertiary dropdown-menu rounded-0 border-0 shadow p-0'>
         <div className='px-1 py-2 shadow-sm p-0 me-2 d-flex'>
           <button className='btn btn-sm' onClick={handleApply}>
-            <span className='material-symbols-outlined'>check_circle</span>
+            <span className='material-symbols-outlined text-primary'>check_circle</span>
           </button>
           <button className='btn btn-sm p-0 me-3' onClick={handleFilterOff}>
-            <span className='material-symbols-outlined'>filter_list_off</span>
+            <span className='material-symbols-outlined text-muted'>filter_list_off</span>
           </button>
           <input type='text' className='form-control form-control-sm' style={{minWidth:"7rem"}} placeholder='Filtrar...' value={textFilter} onChange={(e) => setTextFilter(e.target.value)} ref={filterInputTextRef} onKeyPress={handleTextFilterEnter} />
         </div>

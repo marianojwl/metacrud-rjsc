@@ -49,6 +49,7 @@ function FormInput({autoFocus=false, column, i, data, onChange, showLabel=true, 
       default:
         return (<div key={key} className='form-group mb-1'>
           { showLabel && <label>{metacrud?.label??column?.Field}</label> }
+          { (showLabel && metacrud?.description) && <div><small>{metacrud?.description}</small></div> }
           <input 
             className={'form-control'+(disabled?'':(metacrud?.regex_pattern?(isValid?' is-valid':' is-invalid'):''))}
             disabled={disabled}
