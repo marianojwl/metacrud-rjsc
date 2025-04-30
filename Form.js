@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import {MetaCrudContext} from './MetaCrud'
 import useApi from './useApi';
 import Select from './Select';
 import FormInput from './FormInput';
+import FormBatchInput from './FormBatchInput';
 
-function Form() {
+function Form({isBatchForm=false}) {
 
   const { restrictions, createCallbacks, updateCallbacks, setLastResult, setSection, apiCallback, api_url, tablename, selectedRows, section, columns_data_hook, records_data_hook}  = React.useContext(MetaCrudContext);
   
@@ -27,8 +28,16 @@ function Form() {
   
 
   const onChange = (e) => {
-    setData({...data, [e.target.name]: e.target.value});
+    //setData({...data, [e.target.name]: e.target.value});
+    setData({...data, [e.target.name]: (e.target.value==='')?
+      ( columns?.find(column => column.Field === e.target.name)?.Null==='YES'?null:'' )
+      : e.target.value
+    });
   };
+
+  useEffect(() => {
+    console.log(data);
+  }, [data]);
 
   const inputType = (Type) => {
     switch(Type){
@@ -41,6 +50,7 @@ function Form() {
     }
   };
 
+  /*
   const inputElement = (column, key) => {
     const metacrud = column?.Comment?.metacrud;
     let [type, lenght] = column?.Type.split('(');
@@ -77,6 +87,7 @@ function Form() {
 
     }
   };
+  */
 
   const reEnableButton = (e, label='Guardar') => {
     e.target.disabled = false;
@@ -88,7 +99,7 @@ function Form() {
     e.target.disabled = true;
     e.target.innerText = '...';
 
-    if(section === 'create') {
+    if(section === 'create' || section === 'batchCreate') {
       post_hook.post(data, [
         (json) => { if(!json?.success) { reEnableButton(e); setFormResult(json); } },
         ...createCallbacks
@@ -102,7 +113,7 @@ function Form() {
   }
 
   return ( (section === 'update' && record_hook?.loading) ? <div className='spinner-border spinner-border-sm text-primary'></div> :
-    <div className='MetaCrudForm'>
+    <div className='MetaCrudForm' onKeyUp={(e)=>{ if(e.key === 'Control' || e.key === 'Ctrl') e.stopPropagation(); }} onKeyDown={(e)=>{ if(e.key === 'Control' || e.key === 'Ctrl') e.stopPropagation(); }}>
       { formResult && (formResult?.message || formResult?.error) &&
         <div className={'my-1 px-2 py-1 alert alert-'+(formResult?.success?'success':'warning')}>
           {formResult?.message} {formResult?.error}
@@ -111,9 +122,14 @@ function Form() {
       <form disabled={post_hook?.loading} onSubmit={handleGuardar}>
       {
         columns?.map((column, i) => {
-          return (
+          const inForm = (section === 'create' || section === 'batchCreate') ? (column?.Comment?.metacrud?.inCreateForm??true) : (column?.Comment?.metacrud?.inUpdateForm??true);
+          const isBatchInput = isBatchForm && (column?.Comment?.metacrud?.allowBatchCreate??false);
+          return ( !inForm || (column?.Key === 'PRI' && (section === 'create' || section === 'batchCreate'))  ? null : (
+            isBatchInput ?
+            <FormBatchInput key={"FormBatchInput-"+i} i={i} column={column} data={data} onChange={onChange} />
+            :
             <FormInput key={"FormInput-"+i} i={i} column={column} data={data} onChange={onChange} />
-          )
+          ))
           /*
           const metacrud = column?.Comment?.metacrud;
           let [type, lenght] = column?.Type.split('(');

@@ -1,8 +1,8 @@
 import React from 'react'
 
-function Loading() {
+function Loading({legend=""}) {
   return (
-    <div className='spinner-border spinner-border-sm text-primary'></div>
+    <span className='Loading'><span className='spinner-border spinner-border-sm text-primary' role='status'></span> {legend}</span>
   )
 }
 

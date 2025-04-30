@@ -58,6 +58,7 @@ function Config() {
 
   const properties = {
     "label":{},
+    "order":{},
     "foreign_key":{},
     "foreign_value":{},
     "hidden":{

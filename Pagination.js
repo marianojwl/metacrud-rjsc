@@ -9,7 +9,7 @@ function Pagination({className}) {
   // array with page numbers 1 to aproxRowCount/pageLimit
   const pages = Array.from({length: 1+Math.ceil(aproxRowCount/pageLimit)}, (_, i) => i+1);
 
-  return (
+  return ( !records_data_hook?.response?.data || !table_status ? null :
     <div className={'MetaCrudPagination justify-content-center '+className}>
       <button className='btn px-0 pt-2 pb-0 btn-secondary me-2' onClick={()=>setPage(page-1)} disabled={page===1}>
         <span className='material-symbols-outlined'>keyboard_arrow_left</span>

@@ -6,7 +6,8 @@ function useApi(endpoint, query='', auto=false, dependencies=[], callback=null) 
   const [count, setCount] = useState(0);
 
   const handleFecthError = (e) => {
-    alert('Error de conexión.  No se pudo completar la solicitud.  Verifique su conexión a internet y, si el problema persiste, contacte al administrador del sistema.');
+    //alert('Error de conexión.  No se pudo completar la solicitud.  Verifique su conexión a internet y, si el problema persiste, contacte al administrador del sistema.');
+    console.error('Error de conexión.  No se pudo completar la solicitud.  Verifique su conexión a internet y, si el problema persiste, contacte al administrador del sistema.');
   }
 
   const get = async (query='', callbacks=[]) => {
@@ -48,6 +49,27 @@ function useApi(endpoint, query='', auto=false, dependencies=[], callback=null) 
 
   const put = async (body, callbacks=[]) => post(body, callbacks, 'PUT');
 
+  const del = async (body, callbacks=[]) => post(body, callbacks, 'DELETE');
+
+  const upload = async (body, callbacks=[]) => {
+    setLoading(true);
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        body: body,
+      });
+      const json = await res.json();
+      setResponse(json);
+      if(callback) callback(json);
+      callbacks.forEach(cb => cb(json));
+    } catch(e){
+      handleFecthError(e);
+      if(callback) callback({ success:false, message:'Algo salió mal' });
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     //console.log('useEffect useApi + ' + endpoint);
     if(count === 0 && !auto) return;
@@ -58,7 +80,7 @@ function useApi(endpoint, query='', auto=false, dependencies=[], callback=null) 
     // get(query);
   }, dependencies);
 
-  return { response, loading, get, post, put };
+  return { response, loading, get, post, put, del, upload };
 }
 
 export default useApi;

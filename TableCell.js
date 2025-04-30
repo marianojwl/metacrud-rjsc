@@ -1,12 +1,26 @@
 import React, { useMemo } from 'react'
 import {MetaCrudContext} from './MetaCrud'
 import TableCellForm from './TableCellForm';
-import { AppContext } from '../../App';
+import {TableContext} from './Table';
+
+function CalculatorAddButton({term}) {
+  const { CalculatorAdd } = React.useContext(TableContext);
+  return (<button className='btn btn-sm w-auto d-inline-flex p-0 m-0' onClick={()=>CalculatorAdd(term)}>
+    <span className="material-symbols-outlined">add</span>
+  </button>)
+};
+
+function CalculatorSubtractButton({term}) {
+  const { CalculatorSubtract } = React.useContext(TableContext);
+  return (<button className='btn btn-sm w-auto d-inline-flex p-0 m-0' onClick={()=>CalculatorSubtract(term)}>
+    <span className="material-symbols-outlined">remove</span>
+  </button>)
+};
 
 function ClickToFilterWrapper(props) {
-  const { setFilters, filters } = React.useContext(MetaCrudContext);
 
-  const {ctrlKey} = React.useContext(AppContext);
+  const { setFilters, filters, ctrlKey } = React.useContext(MetaCrudContext);
+
 
   const [mouseOver, setMouseOver] = React.useState(false);
 
@@ -40,32 +54,75 @@ function ClickToFilterWrapper(props) {
 )
 }
 
+function HTMLWrapper(props) {
+  const value = props?.record[props?.field];
+  if(!value) return null;
+  return (<div dangerouslySetInnerHTML={{__html: value}} />);
+}
+
+function HTMLModalPreviewWrapper(props) {
+  const value = props?.record[props?.field];
+  if(!value) return null;
+  return(<div className='HTMLModalPreviewWrapper' key={'HTMLModalPreviewWrapper-'+props?.inner_key}>
+    <button type="button" className="btn btn-primary" data-bs-toggle="modal" data-bs-target={'#HTMLModalPreviewWrapper-'+props?.inner_key}>
+      Vista Previa
+    </button>
+
+    <div className="modal fade" id={'HTMLModalPreviewWrapper-'+props?.inner_key} tabIndex="-1" aria-hidden="true">
+      <div className="modal-dialog modal-lg">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h1 className="modal-title fs-5">Vista Previa</h1>
+            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div className="modal-body">
+            <div dangerouslySetInnerHTML={{__html: value}} />
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}
+
 function TableCell({column, i, j, record, tdClassName, apiCallback}) {
+  const {calcOn, calcSum} = React.useContext(TableContext);
   const [enabled, setEnabled] = React.useState(false);
   const {wrappers} = React.useContext(MetaCrudContext);
   const isForeign = column?.Comment?.metacrud?.foreign_key ? true : false;
   //const recordKey = (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field;
   const recordKey = useMemo(() => (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field, [column]);
-  const isWrapped = wrappers[ recordKey ]? true : false;
+  const isWrapped = wrappers[ recordKey ]? true : (column?.Field?.endsWith('_HTML') || column?.Field?.endsWith('_html_body'));
   const isEditInTableAllowed = column?.Comment?.metacrud?.allowEditInTable?.always || ( column?.Comment?.metacrud?.allowEditInTable?.ifNull && record[ recordKey ] === null );
-  const Wrapper = wrappers[ recordKey ];
+  const Wrapper = (column?.Field?.endsWith('_HTML') || column?.Field?.endsWith('_html_body')) ? HTMLModalPreviewWrapper : wrappers[ recordKey ];
+  
   return (
     <td key={"TableCell-"+i+"-"+j} className={tdClassName}>
       <div className=''>
-        <div className=''>
+        <div className={(calcOn && calcSum && calcSum==record[recordKey])?'bg-primary text-light':''}>
           {
             enabled ? 
               <TableCellForm column={column} record={record} recordKey={recordKey} apiCallback={apiCallback} enabled={enabled} setEnabled={setEnabled} />
             :
             (
               isWrapped ? 
-                <Wrapper key={"wrapper-"+i+"-"+j} inner_key={"wrapper-"+i+"-"+j} field={recordKey} record={record} />  
+                <Wrapper key={"wrapper-"+i+"-"+j} inner_key={"wrapper-"+i+"-"+j} field={recordKey} record={record} apiCallback={apiCallback} />  
               : 
               isForeign ? 
                 <ClickToFilterWrapper key={"ClickToFilter-"+i+"-"+j} record={record} column={column} />
               :
               record[recordKey]
             )
+          }
+          { // if numeric or string containing numbers, show calculator buttons
+          (calcOn && ( typeof record?.[recordKey] === 'numeric' ||typeof record?.[recordKey] === 'string' ) &&  (record?.[recordKey])?.match(/^(\-)?[0-9]+(\.[0-9]+)?$/)) && 
+          <div className='d-flex'>
+          <CalculatorAddButton term={record[recordKey]} />
+          <CalculatorSubtractButton term={record[recordKey]} />
+          </div>
           }
           { isEditInTableAllowed && !enabled &&
           <button className='btn btn-sm w-auto'onClick={()=>setEnabled(prev=>!prev)}>

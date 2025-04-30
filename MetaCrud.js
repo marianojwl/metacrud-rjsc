@@ -5,15 +5,26 @@ import ActionBar from './ActionBar';
 import Form from './Form';
 import DeleteConfirm from './DeleteConfirm';
 import Config from './Config';
+import Cards from './Cards';
+import Loading from './Loading';
+import useKeyboardEvents from '../rjsh-keyboard-events/useKeyboardEvents';
+import Relate from './Relate';
+import FormImport from './FormImport';
+import Chart from './Chart';
 
 export const MetaCrudContext = createContext();
 
-function MetaCrud({ defaultPageLimit=10, view=null, hideTableTitle=false, createCallbacks=[], updateCallbacks=[], deleteCallbacks=[], tablename, api_url, user_roles, extra_columns=[], wrappers={}, defaultOrderBy=1, defaultOrderDir="ASC"}) {
+function MetaCrud({ metaDataVersion=1, allowRelate=false, hiddenForcedSections=[], format="table", defaultPageLimit=20, view=null, hideTableTitle=false, createCallbacks=[], updateCallbacks=[], deleteCallbacks=[], tablename, api_url, user_roles, extra_columns=[], wrappers={}, defaultOrderBy=1, defaultOrderDir="ASC"}) {
+  
   // SECTIONS
   const sections = {
-    "read": { "action":"", "label":"Tabla", "buttonClassName":"secondary", "icon":"table" },
+    "read": { "action":"", "label":"Registros", "buttonClassName":"secondary", "icon":"table" },
+    "chart": { "action":"", "label":"Gráficos", "buttonClassName":"secondary", "icon":"bar_chart" },
     "create": { "action":"create", "label":"Nuevo", "buttonClassName":"success", "icon":"add" },
-    "duplicate": { "action":"create", "label":"Duplicar", "buttonClassName":"success", "icon":"content_copy" },
+    "batchCreate": { "action":"create", "label":"Nuevo Lote", "buttonClassName":"success", "icon":"library_add" },
+    "import": { "action":"create", "label":"Importar", "buttonClassName":"success", "icon":"upload_file" },
+    "relate": { "action":"create", "label":"Relacionar", "buttonClassName":"info", "icon":"link" },
+    //"duplicate": { "action":"create", "label":"Duplicar", "buttonClassName":"success", "icon":"content_copy" },
     "update": { "action":"update", "label":"Editar", "buttonClassName":"warning",  "icon":"edit" },
     "delete": { "action":"delete", "label":"Eliminar", "buttonClassName":"danger", "icon":"delete" },
     "config": { "action":"config", "label":"", "buttonClassName":"tertiary", "icon":"settings" }
@@ -69,19 +80,39 @@ function MetaCrud({ defaultPageLimit=10, view=null, hideTableTitle=false, create
   const [filters, setFilters] = useState({});
 
   // HOOKS
-  const columns_data_hook = useApi(api_url + '/meta/' + tablename + '/columns', '', true);
+  const columns_data_hook = useApi(api_url + '/meta/' + tablename + '/columns', '?mdv='+metaDataVersion, true);
 
-  const columns = columns_data_hook?.response?.data;
+  const table_data_hook = useApi(api_url + '/meta/' + tablename + '/table', '?mdv='+metaDataVersion, true, [reloads]);
+
+  //const columns = columns_data_hook?.response?.data;
+
+  // const metacrudView = view ? (table_data_hook?.response?.data?.Comment?.metacrud?.views[view]??null) : null;
+  let metacrudView = null;
+  try {
+    metacrudView = table_data_hook?.response?.data?.Comment?.metacrud?.views[view];
+  } catch(e) {
+    //if(view) setLastResult({success:false, message:'Vista no encontrada'});
+  }
+
+  const viewOverrides = metacrudView?.regularColumnsOverride??{};
+
+  const viewColumns = metacrudView?.columns??[];
+
+  const mappedRegularColumns = useMemo(() => (columns_data_hook?.response?.data?.map(column => ({...column, Comment: {metacrud: {order:10, ...(column?.Comment?.metacrud??{}), ...viewOverrides[column?.Field]}}}))??[]), [columns_data_hook?.response?.data, viewOverrides]);
+
+  const mappedViewColumns = useMemo(() => viewColumns?.map(e=>({Field: e?.a, Comment: {metacrud: {order:10, ...e}}})), [viewColumns]);
+
+  const columns = useMemo(() => [ ...mappedRegularColumns, ...mappedViewColumns]?.sort((a, b) => (a?.Comment?.metacrud?.order??0) - (b?.Comment?.metacrud?.order??0)), [mappedRegularColumns, mappedViewColumns]);
+  
+
+
+  const batchCreateColumns = useMemo(() => columns?.filter(column=>column?.Comment?.metacrud?.allowBatchCreate===true), [columns]);
 
   //const numberOfHiddenColumns = columns?.filter(column=>column?.Comment?.metacrud?.hidden===true)?.length || 0;
 
-  const numberOfHiddenColumns = useMemo(() => columns?.filter(column=>column?.Comment?.metacrud?.hidden===true)?.length || 0, [(columns)]);
+  const numberOfHiddenColumns = useMemo(() => columns?.filter(column=>column?.Comment?.metacrud?.hidden===true)?.length || 0, [columns]);
   
-  //const primaryKeyName = columns?.find(column => column?.Key === 'PRI')?.Field;
-
-  const primaryKeyName = useMemo(() => columns?.find(column => column?.Key === 'PRI')?.Field, [(columns)]);
-
-  const table_data_hook = useApi(api_url + '/meta/' + tablename + '/table', '', true, [reloads]);
+  const primaryKeyName = useMemo(() => columns?.find(column => column?.Key === 'PRI')?.Field, [columns]);
 
   const restrictions = table_data_hook?.response?.data?.Comment?.metacrud?.restrictions??{};
 
@@ -91,8 +122,8 @@ function MetaCrud({ defaultPageLimit=10, view=null, hideTableTitle=false, create
 
   const query = '?page='+page
               + '&limit='+pageLimit
-              +'&sort='+orderBy
-              +'&order='+orderDir 
+              + '&sort='+orderBy
+              + '&order='+orderDir 
               + ( view ? '&metacrudView='+view : '')
               + ( Object.keys(filters).length ? '&'+mappedFilters.join('&') : '')
               + (search!==''?'&search='+search:'');
@@ -114,26 +145,34 @@ function MetaCrud({ defaultPageLimit=10, view=null, hideTableTitle=false, create
 
   const tableTitle = table_meta?.views?.[view]?.title??table_meta?.title??table_status?.Name;
   
-  return ( table_data_hook?.loading ? <div className='spinner-border spinner-border-sm text-primary'></div> :
-    <MetaCrudContext.Provider value={{restrictions, query, reloadRecords, table_data_hook, view, filters, setFilters, sections, columns, numberOfHiddenColumns, primaryKeyName, extra_columns, wrappers, search, setSearch, orderBy, orderDir, setOrderBy, setOrderDir, apiCallback, setLastResult, table_meta, table_status, user_roles, page, setPage, pageLimit, setPageLimit, doReload, selectedRows, setSelectedRows, section, setSection, table_data_hook, columns_data_hook, records_data_hook, tablename, api_url, createCallbacks, updateCallbacks, deleteCallbacks}}>
-      <div className='px-1 py-1'>
-      { hideTableTitle ? null :
-        <h3 className='border-bottom ps-1 pt-2 pb-2 mb-2'>{tableTitle}</h3>
-      }
-        { (section === 'read' && lastResult && (lastResult?.message || lastResult?.error)) &&
-          <div className={'my-1 px-2 py-1 alert alert-'+(lastResult?.success?'success':'warning')}>
-            {lastResult?.message} {lastResult?.error}
-          </div>
+  const keyboard_events_hook = useKeyboardEvents();
+  const {ctrlKey} = keyboard_events_hook;
+
+  return ( table_data_hook?.loading ? <Loading legend='Cargando estructura de tabla' /> :
+    <MetaCrudContext.Provider value={{allowRelate, ctrlKey, metacrudView, hiddenForcedSections, batchCreateColumns, restrictions, query, reloadRecords, table_data_hook, table_meta, table_status, view, filters, setFilters, sections, columns, numberOfHiddenColumns, primaryKeyName, extra_columns, wrappers, search, setSearch, orderBy, orderDir, setOrderBy, setOrderDir, apiCallback, setLastResult, user_roles, page, setPage, pageLimit, setPageLimit, doReload, selectedRows, setSelectedRows, section, setSection, columns_data_hook, records_data_hook, tablename, api_url, createCallbacks, updateCallbacks, deleteCallbacks}}>
+      { format === 'cards' ? <Cards records={records_data_hook?.response?.data?.rows} /> : 
+        <div className='px-1 py-1'>
+        { hideTableTitle ? null :
+          <h3 className='border-bottom ps-1 pt-2 pb-2 mb-2'>{tableTitle}</h3>
         }
-        <ActionBar className='my-0' />
-        { section === 'read' && <Table /> }
-        { section === 'create' && <Form /> }
-        { section === 'update' && <Form /> }
-        { section === 'duplicate' && <DeleteConfirm /> }
-        { section === 'delete' && <DeleteConfirm /> }
-        { section === 'config' && <Config /> }
-      </div>
-      
+          { (section === 'read' && lastResult && (lastResult?.message || lastResult?.error)) &&
+            <div className={'my-1 px-2 py-1 alert alert-'+(lastResult?.success?'success':'warning')}>
+              {lastResult?.message} {lastResult?.error}
+            </div>
+          }
+          <ActionBar className='my-0' />
+          { section === 'read' && <Table /> }
+          { section === 'chart' && <Chart /> }
+          { section === 'create' && <Form /> }
+          { section === 'batchCreate' && <Form isBatchForm={true} /> }
+          { section === 'import' && <FormImport /> }
+          { section === 'relate' && <Relate /> }
+          { section === 'update' && <Form /> }
+          { section === 'duplicate' && <DeleteConfirm /> }
+          { section === 'delete' && <DeleteConfirm /> }
+          { section === 'config' && <Config /> }
+        </div>
+      }
     </MetaCrudContext.Provider>
   )
 }

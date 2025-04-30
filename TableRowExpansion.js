@@ -4,7 +4,7 @@ import TableCell from './TableCell';
 
 function TableRowExpansion({i, record}) {
   const {wrappers, extra_columns, columns, numberOfHiddenColumns} = React.useContext(MetaCrudContext);
-  return (
+  return ( !record ? null :
     <tr key={i+'-data'} className=''>
       <td colSpan={columns?.length+extra_columns?.length-numberOfHiddenColumns+2} className='border border-primary border-2'>
         {

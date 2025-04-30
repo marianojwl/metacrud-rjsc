@@ -89,7 +89,7 @@ const SearchboxTimeout = ({
           }}
           onClick={handleClearButtonClick}
           aria-label="Clear"
-        ><span className={"material-symbols-outlined "+(searchQuery===""?'text-muted':'text-danger')}>backspace</span></button>
+        ><span className={"material-symbols-outlined "+(searchQuery===""?'text-muted':'text-muted')}>backspace</span></button>
       )}
       <div className={containerClass}></div>
     </div>

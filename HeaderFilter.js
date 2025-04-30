@@ -1,65 +1,9 @@
 import React from 'react'
-import {MetaCrudContext} from './MetaCrud'
-import useApi from './useApi';
-import Loading from './Loading';
-
-function SelectMultiple({column, data, onChange, disabled, isValid, autoFocus=false}) {
-
-  const {restrictions, section, tablename, api_url} = React.useContext(MetaCrudContext);
-
-  const metacrud = column?.Comment?.metacrud;
-
-  const [kCol, kTab, kDb] = metacrud?.foreign_key?.split('.')?.reverse();
-  const [vCol, vTab, vDb] = metacrud?.foreign_value?.split('.')?.reverse();
-
-  const options_hook = useApi(api_url + '/crud/' + (kDb?kDb+'.':'') + kTab + '?limit=1000&sort='+vCol+'&cols[]='+kCol+'&cols[]='+vCol, '', true);
-
-  const onChangeAll = (e) => {
-    if (e.target.checked) {
-      onChange({target: {name: column.Field, value: options_hook?.response?.data?.rows?.map(option => Number.parseInt(option[kCol]))}})
-    } else {
-      onChange({target: {name: column.Field, value: []}})
-    }
-  }
-
-  return ( options_hook?.loading ? <Loading /> :
-    <div 
-      className="SelectMultiple">
-        <div className='form-check d-inline-flex w-auto me-3'>
-          <input type='checkbox' value="" className='form-check-input' onChange={onChangeAll} checked={data[column.Field]?.length === options_hook?.response?.data?.rows?.length} />
-          <label className='ms-2 form-check-label'>Todos</label>
-        </div>
-      {
-        options_hook?.response?.data?.rows?.filter(option => !restrictions?.[section] || !restrictions?.[section]?.[column.Field] || restrictions?.[section]?.[column.Field]?.includes(option[kCol]))?.map((option, i) => 
-          <div key={i} className='form-check d-inline-flex w-auto me-3'>
-            <input type='checkbox' value={option[kCol]} className='form-check-input' 
-              checked={data[column.Field]?.includes(Number.parseInt(option[kCol]))} 
-              onChange={(e) => {
-                if (e.target.checked) {
-                  onChange({target: {name: column.Field, value: [...(data[column.Field]??[]), Number.parseInt(e.target.value)]}})
-                } else {
-                  onChange({target: {name: column.Field, value: data[column.Field]?.filter(v => v !== Number.parseInt(e.target.value))}})
-                }
-              }
-              }
-              />
-
-            <label className='ms-2 form-check-label'>{option[vCol]}</label>
-          </div>
-        )
-      }
-  </div>
-  )
-}
-
-export default SelectMultiple
-/*
-import React from 'react'
 import Loading from './Loading';
 import useApi from './useApi';
 import {MetaCrudContext} from './MetaCrud';
 
-function SelectMultiple({column, disabled=false}) {
+function HeaderFilter({column, disabled=false}) {
 
   const filterInputTextRef = React.useRef(null);
 
@@ -129,9 +73,9 @@ function SelectMultiple({column, disabled=false}) {
   }
 
   return ( 
-    <div className='dropdown d-inline-block'>
+    <div className='HeaderFilter dropdown d-inline-block'>
       <a onClick={handleOpen} className={'btn rounded-0 border-0 py-0 px-0 ms-2 mt-1'+(disabled?' text-muted':' dropdown-toggle')} href={disabled?null:'#'}  role='button' id='dropdownMenuLink' data-bs-toggle={disabled?'':'dropdown'} aria-expanded='false' style={{cursor: disabled?'not-allowed':'pointer'}}>
-        <span className={'material-symbols-outlined'+(filters?.[column?.Field]?.length?' text-primary':'')}>filter_list</span>
+        <span className={'fs-6 material-symbols-outlined'+(filters?.[column?.Field]?.length?' text-primary':'')}>filter_list</span>
         { filters?.[column?.Field]?.length ?
         <span className="position-absolute top-0 start-50  badge rounded-pill bg-danger">
           {filters?.[column?.Field]?.length}
@@ -164,33 +108,4 @@ function SelectMultiple({column, disabled=false}) {
   )
 }
 
-export default SelectMultiple
-*/
-/*
-<div className='card position-absolute' style={{zIndex: 1000}}>
-      <div className='card-header'>
-        {selected?.length === options?.length ? 'Todos' : selected?.length } seleccionados
-        <div className='float-end'>
-          <span className='material-symbols-outlined'>check_circle</span>
-          <span className='material-symbols-outlined'>cancel</span>
-        </div>
-      </div>
-      <div className='card-body'>
-        <div className='form-check'>
-        <div className='form-check'>
-          <input className='form-check-input' type='checkbox' value=""  onChange={handleToggleAll} />
-          <label className='form-check-label'>*</label>
-        </div>
-          {
-            options?.map((option, i) => 
-              <div key={i} className='form-check m-0'>
-                <input className='form-check-input' type='checkbox' value={option[kCol]} onChange={handleChange} checked={selected.includes(option[kCol])} />
-                <label className='form-check-label'>{option[vCol]}</label>
-              </div>
-            )
-          }
-        </div>
-      </div>
-
-    </div>
-*/
+export default HeaderFilter

@@ -5,8 +5,10 @@ import TableCell from './TableCell'
 import useApi from './useApi';
 import Loading from './Loading';
 
+export const TableRowContext = React.createContext({});
+
 function TableRow({columns, i, record, tdClassName, handleCheckOne}) {
-  const { extra_columns, api_url, tablename, selectedRows, setSelectedRows, numberOfHiddenColumns, primaryKeyName, query} = React.useContext(MetaCrudContext);
+  const { view, extra_columns, api_url, tablename, selectedRows, setSelectedRows, numberOfHiddenColumns, primaryKeyName, query} = React.useContext(MetaCrudContext);
   const {unhiddenColumns, collapsedColumns, setCollapsedColumns, expandedRows, handleExpandRow} = React.useContext(TableContext);
   const [rec, setRec] = React.useState(record);
 
@@ -17,16 +19,17 @@ function TableRow({columns, i, record, tdClassName, handleCheckOne}) {
   const row_hook = useApi(api_url + '/crud/' + tablename + '/' + rec[primaryKeyName], '', false, [], getCallback);
 
   const apiCallback = React.useCallback((r) => {
-    row_hook.get();
+    const ep = view ? '/?metacrudView='+view : '';
+    row_hook.get(ep);
   }, []);
 
 
-  return ( 
+  return ( !rec ? null : <TableRowContext.Provider value={{apiCallback}}>
     <tr>
       <td className={tdClassName}><input className='form-check-input' type="checkbox" checked={selectedRows.includes(rec[primaryKeyName])} onChange={(e)=>handleCheckOne(e, rec[primaryKeyName])} /></td>
       {
         unhiddenColumns.map((column, j) => ( row_hook?.loading ? <td key={"td-loading-"+i+"-"+j}><Loading /></td> :
-          collapsedColumns?.includes(column?.Field) ? <td key={"td-collapsed-"+i+"-"+j} className='bg-secondary'></td> :
+          collapsedColumns?.includes(column?.Field) ? <td key={"td-collapsed-"+i+"-"+j} className='bg-secondary'>{rec[column?.Field]?<button onClick={()=>setCollapsedColumns(prev=>prev?.filter(item=>item!==column?.Field))} className='btn p-0 m-0' title={rec[column?.Field]?.toString()}>{rec[column?.Field]?.toString()?.substring(0, 1)}{rec[column?.Field]?.toString()?.length>2?'...':''}</button>:''}</td> :
           <TableCell key={"TableCell-"+i+"-"+j} i={i} j={j} column={column} record={rec} tdClassName={tdClassName} apiCallback={apiCallback} />
         ))
       }
@@ -45,7 +48,7 @@ function TableRow({columns, i, record, tdClassName, handleCheckOne}) {
         </td> : null
       }
     </tr>
-  )
+  </TableRowContext.Provider>)
 }
 
 export default TableRow

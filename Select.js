@@ -9,8 +9,8 @@ function Select({column, data, onChange, disabled, isValid, autoFocus=false}) {
 
   const metacrud = column?.Comment?.metacrud;
 
-  const [kCol, kTab, kDb] = metacrud?.foreign_key.split('.').reverse();
-  const [vCol, vTab, vDb] = metacrud?.foreign_value.split('.').reverse();
+  const [kCol, kTab, kDb] = metacrud?.foreign_key?.split('.')?.reverse();
+  const [vCol, vTab, vDb] = metacrud?.foreign_value?.split('.')?.reverse();
 
   const options_hook = useApi(api_url + '/crud/' + (kDb?kDb+'.':'') + kTab + '?limit=1000&sort='+vCol+'&cols[]='+kCol+'&cols[]='+vCol, '', true);
 
@@ -19,7 +19,7 @@ function Select({column, data, onChange, disabled, isValid, autoFocus=false}) {
       className={'form-select'+(disabled?'':(metacrud?.regex_pattern?(isValid?' is-valid':' is-invalid'):''))}
       disabled={disabled}
       name={column.Field} 
-      value={data[column.Field]} 
+      value={data[column?.Field]??''} 
       autoFocus={autoFocus}
       onChange={onChange}>
       <option value=''>Seleccione...</option>
