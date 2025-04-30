@@ -19,8 +19,7 @@ function TableRow({columns, i, record, tdClassName, handleCheckOne}) {
   const row_hook = useApi(api_url + '/crud/' + tablename + '/' + rec[primaryKeyName], '', false, [], getCallback);
 
   const apiCallback = React.useCallback((r) => {
-    const ep = view ? '/?metacrudView='+view : '';
-    row_hook.get(ep);
+    view ? row_hook.get('/?metacrudView='+view) : row_hook.get();
   }, []);
 
 
