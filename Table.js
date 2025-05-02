@@ -39,7 +39,6 @@ function Table({className=""}) {
 
   const columns = useMemo(() => [ ...mappedRegularColumns, ...mappedViewColumns]?.sort((a, b) => (a?.Comment?.metacrud?.order??0) - (b?.Comment?.metacrud?.order??0)), [mappedRegularColumns, mappedViewColumns]);
   
-  console.log("columns", columns);
   // Calculator
   // enableCalc if there is at least one column with numeric type
   const calcEnabled = columns

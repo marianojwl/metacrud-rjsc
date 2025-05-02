@@ -107,11 +107,22 @@ function Form({isBatchForm=false}) {
     }
 
     if(section === 'update') {
-      post_hook.put(data, updateCallbacks);
+      post_hook.put(data, [
+        (json) => { if(!json?.success) { reEnableButton(e); setFormResult(json); } },
+        ...updateCallbacks
+      ]);
     }
 
   }
 
+  // disable guardar if any with regex is invalid
+  const someAreInvalid = columns?.some((column) => {
+    const metacrud = column?.Comment?.metacrud;
+    const regex = new RegExp(metacrud?.regex_pattern??'.*');
+    return ( !regex.test(data[column.Field]) && data[column.Field] != undefined );
+  }
+  );
+  
   return ( (section === 'update' && record_hook?.loading) ? <div className='spinner-border spinner-border-sm text-primary'></div> :
     <div className='MetaCrudForm' onKeyUp={(e)=>{ if(e.key === 'Control' || e.key === 'Ctrl') e.stopPropagation(); }} onKeyDown={(e)=>{ if(e.key === 'Control' || e.key === 'Ctrl') e.stopPropagation(); }}>
       { formResult && (formResult?.message || formResult?.error) &&
@@ -146,7 +157,7 @@ function Form({isBatchForm=false}) {
           */
       })
       }
-      <button className='btn btn-primary mt-2 me-2' onClick={handleGuardar}>Guardar</button>
+      <button disabled={someAreInvalid} className='btn btn-primary mt-2 me-2' onClick={handleGuardar}>Guardar</button>
       <button className='btn btn-secondary mt-2' onClick={()=>setSection('read')}>Cancelar</button>
     </form>
     </div>

@@ -156,6 +156,7 @@ function FormInput({autoFocus=false, column, i, data, onChange, showLabel=true, 
             { showLabel && <label>{metacrud?.label??column?.Field}</label> }
             { (showLabel && metacrud?.description) && <div><small>{metacrud?.description}</small></div> }
             <textarea 
+              autoFocus={autoFocus}
               className={'form-control'+(disabled?'':(metacrud?.regex_pattern?(isValid?' is-valid':' is-invalid'):''))}
               disabled={disabled}
               rows={column?.Field?.endsWith('_HTML')?22:5}
@@ -169,6 +170,22 @@ function FormInput({autoFocus=false, column, i, data, onChange, showLabel=true, 
         return (<div key={key} className='form-group mb-1'>
           { showLabel && <label>{metacrud?.label??column?.Field}</label> }
           <Select autoFocus={autoFocus} column={column} data={data} onChange={onChange} disabled={disabled} isValid={isValid} />
+        </div>);
+        break;
+      case 'boolean':
+      case 'tinyint':
+        return (<div key={key} className='form-group mb-1'>
+          { showLabel && <label>{metacrud?.label??column?.Field}</label> }
+          { (showLabel && metacrud?.description) && <div><small>{metacrud?.description}</small></div> }
+          <div className='form-check form-switch'>
+          <input 
+            className={'form-check-input'}
+            disabled={disabled}
+            type='checkbox' 
+            name={column.Field} 
+            checked={data[column.Field]==1 || false} 
+            onChange={onChange} />
+          </div>
         </div>);
         break;
       default:

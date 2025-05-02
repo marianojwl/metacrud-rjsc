@@ -49,7 +49,7 @@ function ClickToFilterWrapper(props) {
       }
     });
   }}>
-    {record[foreign_value]}
+    {record[foreign_value??field]}
   </a>
 )
 }
@@ -98,7 +98,7 @@ function TableCell({column, i, j, record, tdClassName, apiCallback}) {
   const isWrapped = wrappers[ recordKey ]? true : (column?.Field?.endsWith('_HTML') || column?.Field?.endsWith('_html_body'));
   const isEditInTableAllowed = column?.Comment?.metacrud?.allowEditInTable?.always || ( column?.Comment?.metacrud?.allowEditInTable?.ifNull && record[ recordKey ] === null );
   const Wrapper = (column?.Field?.endsWith('_HTML') || column?.Field?.endsWith('_html_body')) ? HTMLModalPreviewWrapper : wrappers[ recordKey ];
-  
+  const preformattedTypes = ['text','tinytext'];
   return (
     <td key={"TableCell-"+i+"-"+j} className={tdClassName}>
       <div className=''>
@@ -114,17 +114,24 @@ function TableCell({column, i, j, record, tdClassName, apiCallback}) {
               isForeign ? 
                 <ClickToFilterWrapper key={"ClickToFilter-"+i+"-"+j} record={record} column={column} />
               :
-              record[recordKey]
+              preformattedTypes?.includes(column?.Type) ? 
+                <pre style={{maxHeight:'2.5rem', overflowY: 'hidden' }} title={record[recordKey]}>{record[recordKey]}</pre> : 
+                (column?.Type ===  'boolean' || column?.Type ===  'tinyint(1)') ?
+                  <div className='form-check form-switch'>
+                    <input className='form-check-input' type="checkbox" checked={record[recordKey]==1} disabled={true}  />
+                  </div>
+                :
+                <ClickToFilterWrapper key={"ClickToFilter-"+i+"-"+j} record={record} column={column} />
             )
           }
           { // if numeric or string containing numbers, show calculator buttons
           (calcOn && ( typeof record?.[recordKey] === 'numeric' ||typeof record?.[recordKey] === 'string' ) &&  (record?.[recordKey])?.match(/^(\-)?[0-9]+(\.[0-9]+)?$/)) && 
           <div className='d-flex'>
-          <CalculatorAddButton term={record[recordKey]} />
-          <CalculatorSubtractButton term={record[recordKey]} />
+            <CalculatorAddButton term={record[recordKey]} />
+            <CalculatorSubtractButton term={record[recordKey]} />
           </div>
           }
-          { isEditInTableAllowed && !enabled &&
+          { (isEditInTableAllowed || (column?.Type ===  'boolean' || column?.Type ===  'tinyint(1)') ) && !enabled &&
           <button className='btn btn-sm w-auto'onClick={()=>setEnabled(prev=>!prev)}>
             <span className="material-symbols-outlined">edit</span>
           </button>
