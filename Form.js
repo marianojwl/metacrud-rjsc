@@ -28,16 +28,19 @@ function Form({isBatchForm=false}) {
   
 
   const onChange = (e) => {
-    //setData({...data, [e.target.name]: e.target.value});
-    setData({...data, [e.target.name]: (e.target.value==='')?
-      ( columns?.find(column => column.Field === e.target.name)?.Null==='YES'?null:'' )
-      : e.target.value
-    });
+    if(e.target.type === 'checkbox') {
+      setData({...data, [e.target.name]: e.target.checked ? 1 : 0});
+    } else {
+      setData({...data, [e.target.name]: (e.target.value==='')?
+        ( columns?.find(column => column.Field === e.target.name)?.Null==='YES'?null:'' )
+        : e.target.value
+      });
+    }
   };
 
-  useEffect(() => {
-    console.log(data);
-  }, [data]);
+  // useEffect(() => {
+  //   console.log(data);
+  // }, [data]);
 
   const inputType = (Type) => {
     switch(Type){
@@ -119,7 +122,18 @@ function Form({isBatchForm=false}) {
   const someAreInvalid = columns?.some((column) => {
     const metacrud = column?.Comment?.metacrud;
     const regex = new RegExp(metacrud?.regex_pattern??'.*');
-    return ( !regex.test(data[column.Field]) && data[column.Field] != undefined );
+    if(metacrud?.allowBatchCreate){
+      if(!data[column?.Field]) return false;
+      if(typeof data[column?.Field] === 'array') {
+        return data[column?.Field]?.some((line) => {
+          return ( !regex.test(line) );
+        });
+      } else {
+        return ( !regex.test(data[column?.Field]) && data[column?.Field] != undefined );
+      }
+    } else {
+      return ( !regex.test(data[column.Field]) && data[column.Field] != undefined );
+    }
   }
   );
   

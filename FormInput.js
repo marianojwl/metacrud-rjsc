@@ -146,6 +146,14 @@ function FormInput({autoFocus=false, column, i, data, onChange, showLabel=true, 
       //   return Wrapper.element;
       //     //return <HTMLEditore key={key} disabled={disabled} name={column.Field} value={data[column.Field] || ""} onChange={onChange} autoFocus={autoFocus} />
       //   break;
+      case 'enum':
+        return (
+          <select className='form-select' key={key} name={column.Field} value={data[column.Field] || ""} onChange={onChange} disabled={disabled}>
+            <option value=''>Seleccione...</option>
+            {lenght?.split(',').map((option, i)=><option key={i} value={option.replace(/'/g,'')}>{option.replace(/'/g,'')}</option>)}
+          </select>
+        );
+        break
       case 'file':
         return <InputFileUploader key={key} column={column} onChange={onChange} value={data[column?.Field] || ""}  />;
         break;

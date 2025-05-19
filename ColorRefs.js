@@ -1,5 +1,6 @@
 import React from 'react'
 import {TableContext} from './Table'
+import { MetaCrudContext } from './MetaCrud';
 
 
 function Calculator(){
@@ -56,9 +57,14 @@ function CollapseColorGroupToggle({colorRefKey, label}) {
 
 function ColorRefs() {
   const {calcEnabled, colorRefs, setCollapsedColumns} = React.useContext(TableContext);
+  const {records_data_hook} = React.useContext(MetaCrudContext);
   return (
     <div className='colorRefs mb-2 d-flex flex-wrap position-relative'>
       <div className='position-sticky top-0 start-0'>
+        <div className='me-2 d-inline-flex'>
+          <span className='material-symbols-outlined fs-5 d-inline-flex me-1 text-muted'>hourglass_bottom</span>
+          <span className='text-muted' title='Tiempo de Ejecución'>{records_data_hook?.response?.data?.executionTime?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} s</span>
+        </div>
         {
           Object.keys(colorRefs).map((key, i) => (
             <div key={"colorRef-"+i} className='me-2 d-inline-flex'>

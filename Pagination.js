@@ -2,7 +2,7 @@ import React from 'react'
 import {MetaCrudContext} from './MetaCrud'
 
 function Pagination({className}) {
-  const {table_status, records_data_hook, page, setPage, pageLimit, setPageLimit} = React.useContext(MetaCrudContext);
+  const {maxPageSize, table_status, records_data_hook, page, setPage, pageLimit, setPageLimit} = React.useContext(MetaCrudContext);
 
   const aproxRowCount = table_status?.Rows??1;
 
@@ -26,7 +26,7 @@ function Pagination({className}) {
       </button>
       <select className='form-select ms-2 w-auto d-inline' value={pageLimit} onChange={e=>{setPageLimit(Number(e.target.value)); setPage(1)}}>
         {
-          [10, 20, 50, 100].map((limit, i) => (
+          [10, 20, 50, 100].map((limit, i) => ( ( maxPageSize && limit > maxPageSize ) ? null :
             <option key={i} value={limit}>Mostrar de a {limit}</option>
           ))
         }

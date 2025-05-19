@@ -4,7 +4,7 @@ import SearchboxTimeout from './SearchboxTimeout';
 
 
 function ActionBar({className=""}) {
-  const {hiddenForcedSections, allowRelate, batchCreateColumns, reloadRecords, sections, search, setSearch, table_meta, user_roles, selectedRows, section, setSection} = React.useContext(MetaCrudContext);
+  const {searchDisabled, hiddenForcedSections, allowRelate, batchCreateColumns, reloadRecords, sections, search, setSearch, table_meta, user_roles, selectedRows, section, setSection} = React.useContext(MetaCrudContext);
 
   const hasPermission = (action) => {
     if(action==='config') {
@@ -61,7 +61,7 @@ function ActionBar({className=""}) {
         })
         */
       }
-      {section === 'read' && 
+      { (section === 'read' && !searchDisabled) &&
         <SearchboxTimeout 
           autoFocus={false} 
           value={search} 

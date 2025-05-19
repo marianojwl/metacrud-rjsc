@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import Loading from './Loading';
 import useApi from './useApi';
 import {MetaCrudContext} from './MetaCrud';
@@ -11,23 +11,38 @@ function HeaderFilter({column, disabled=false}) {
 
   const [textFilter, setTextFilter] = React.useState('');
 
-  const {api_url, filters, setFilters} = React.useContext(MetaCrudContext);
+  const {api_url, mappedFilters, search, filters, setFilters, tablename, view, query} = React.useContext(MetaCrudContext);
 
   const metacrud = column?.Comment?.metacrud;
 
-  const [kCol, kTab, kDb] = metacrud?.foreign_key ? metacrud?.foreign_key?.split('.').reverse() : [column?.Field, column?.Comment?.metacrud?.table??"", column?.Comment?.metacrud?.database??""];
-  const [vCol, vTab, vDb] = metacrud?.foreign_value ? metacrud?.foreign_value?.split('.').reverse() : [column?.Field, column?.Comment?.metacrud?.table??"", column?.Comment?.metacrud?.database??""];
+  const [kCol, kTab, kDb] = metacrud?.foreign_key ? metacrud?.foreign_key?.split('.').reverse() : [column?.Field, column?.Comment?.metacrud?.table??tablename, column?.Comment?.metacrud?.database??""];
+  const [vCol, vTab, vDb] = metacrud?.foreign_value ? metacrud?.foreign_value?.split('.').reverse() : [column?.Comment?.metacrud?.filterLabel??column?.Field, column?.Comment?.metacrud?.table??"", column?.Comment?.metacrud?.database??""];
 
-  const options_hook = useApi(api_url + '/crud/' + (kDb?kDb+'.':'') + kTab + '?distinct=true&limit=1000&sort='+vCol+'&cols[]='+kCol+'&cols[]='+vCol, '', false);
+  const viewInThisTable = view && tablename === kTab;
+
+  const options_hook = useApi(api_url + '/crud/' + (kDb?kDb+'.':'') + kTab + '?distinct=true&limit=1000&sort='+vCol+'&cols[]='+kCol+'&cols[]='+vCol + (view&&viewInThisTable ? '&metacrudView='+view : '') , '', false);
+
+  //const options_hook = useApi(api_url + '/filters/' + (kDb?kDb+'.':'') + kTab + '?col='+vCol, '', false);
+
+  // const options_query = "?distinct=true&limit=1000&sort="+vCol+"&cols[]="+kCol+"&cols[]="+vCol + (view ? '&metacrudView='+view : '')
+  // + ( Object.keys(filters).length ? '&'+mappedFilters.join('&') : '')
+  // + (search!==''?'&search='+search:'');
+
+  // const options_hook = useApi(api_url + '/crud/' + tablename , options_query , '' , false );
 
   const options = options_hook?.response?.data?.rows || [];
 
   const [selected, setSelected] = React.useState(filters?.[column?.Field] || []);
 
+  // useEffect(() => {
+  //   console.log(filters);
+  // }, [filters]);
+
   const handleApply = () => {
-    if(selected?.length && selected?.length < options?.length) {
-      setFilters({...filters, [column?.Field]: selected});
+    if(selected?.length) { //  && selected?.length < options?.length) {
+      setFilters({...filters, [column?.Field]: [...selected]});
     } else {
+      console.log('setting as null');
       setFilters({...filters, [column?.Field]: null});
     }
   };
@@ -38,9 +53,9 @@ function HeaderFilter({column, disabled=false}) {
 
   const handleChange = (e) => {
     if (e.target.checked) {
-      setSelected([...selected, (column?.Type?.includes('int')?parseInt(e.target.value):e.target.value)])
+      setSelected([...selected, (e.target.value===""?"":(column?.Type?.includes('int')?parseInt(e.target.value):e.target.value))])
     } else {
-      setSelected(selected.filter(v => v !== e.target.value))
+      setSelected(selected.filter(v => v != e.target.value))
     }
   }
 
@@ -57,13 +72,16 @@ function HeaderFilter({column, disabled=false}) {
     autoFocusCallback();
   }
 
-  const optionsDisplaying = options?.filter(option => option[vCol].toLowerCase().includes(textFilter.toLowerCase()));
+  const optionsDisplaying = options?.
+  // filter allows only strings and numbers
+  filter(option => (typeof option?.[kCol] === 'string' || typeof option?.[kCol] === 'number'))?.
+  filter(option => option?.[vCol]?.toLowerCase()?.includes(textFilter?.toLowerCase()));
 
   
   const handleTextFilterEnter = (e) => {
     if(e.key === 'Enter') {
       e.preventDefault();
-      const selected = optionsDisplaying?.filter(option => option[vCol].toLowerCase().includes(textFilter.toLowerCase()))?.filter(option => option[kCol]!="" && option[kCol]!=null)?.map(option => option[kCol]);
+      const selected = optionsDisplaying?.filter(option => option?.[vCol]?.toLowerCase()?.includes(textFilter?.toLowerCase()))?.filter(option => option[kCol]!="" && option[kCol]!=null)?.map(option => option[kCol]);
       if(selected?.length && selected?.length < options?.length) {
         setFilters({...filters, [column?.Field]: selected});
       } else {
@@ -93,11 +111,15 @@ function HeaderFilter({column, disabled=false}) {
           <input type='text' className='form-control form-control-sm' style={{minWidth:"7rem"}} placeholder='Filtrar...' value={textFilter} onChange={(e) => setTextFilter(e.target.value)} ref={filterInputTextRef} onKeyPress={handleTextFilterEnter} />
         </div>
         <ul className='pt-0 px-3 pb-0 scrollable-menu m-0' style={{maxHeight:'50vh', overflowY:'auto'}} onClick={(e) => e.stopPropagation()}  >
+          <li className='my-2 form-check fw-normal'>
+            <input id={"ch-"+column?.Field+"-null"} className='form-check-input' type='checkbox' value="" onChange={handleChange} checked={selected?.includes("")} />
+            <label htmlFor={"ch-"+column?.Field+"-null"} className='form-check-label'>(vacío)</label>
+          </li>
           {
             (options_hook?.loading || !column) ? <Loading /> :
             optionsDisplaying?.map((option, i) => 
               <li key={i} className='my-2 form-check fw-normal'>
-                <input id={"ch-"+column?.Field+"-"+i} className='form-check-input' type='checkbox' value={option[kCol]} onChange={handleChange} checked={selected.includes(option[kCol])} disabled={!option[kCol]??null} />
+                <input id={"ch-"+column?.Field+"-"+i} className='form-check-input' type='checkbox' value={option[kCol]} onChange={handleChange} checked={selected?.includes(column?.Type?.includes('int')?parseInt(option[kCol]):option[kCol])} disabled={!option[kCol]??null} />
                 <label htmlFor={"ch-"+column?.Field+"-"+i}  className='form-check-label'>{option[vCol]}</label>
               </li>
             )
