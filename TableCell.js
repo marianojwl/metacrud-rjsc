@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import {MetaCrudContext} from './MetaCrud'
 import TableCellForm from './TableCellForm';
 import {TableContext} from './Table';
+import hasPermission from './functions/hasPermission';
 
 function CalculatorAddButton({term}) {
   const { CalculatorAdd } = React.useContext(TableContext);
@@ -91,7 +92,7 @@ function HTMLModalPreviewWrapper(props) {
 function TableCell({column, i, j, record, tdClassName, apiCallback}) {
   const {calcOn, calcSum} = React.useContext(TableContext);
   const [enabled, setEnabled] = React.useState(false);
-  const {wrappers} = React.useContext(MetaCrudContext);
+  const {wrappers, user_roles, table_meta} = React.useContext(MetaCrudContext);
   const isForeign = column?.Comment?.metacrud?.foreign_key ? true : false;
   //const recordKey = (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field;
   const recordKey = useMemo(() => (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field, [column]);
@@ -115,7 +116,8 @@ function TableCell({column, i, j, record, tdClassName, apiCallback}) {
                 <ClickToFilterWrapper key={"ClickToFilter-"+i+"-"+j} record={record} column={column} />
               :
               preformattedTypes?.includes(column?.Type) ? 
-                <pre style={{maxHeight:'2.5rem', overflowY: 'hidden' }} title={record[recordKey]}>{record[recordKey]}</pre> : 
+                <pre style={{wordBreak:'break-all', whiteSpace: 'pre-wrap',
+                   maxWidth:'70vw', maxHeight:'2.5rem', overflowY: 'auto' }} title={record[recordKey]}>{record[recordKey]}</pre> : 
                 (column?.Type ===  'boolean' || column?.Type ===  'tinyint(1)') ?
                   <div className='form-check form-switch'>
                     <input className='form-check-input' type="checkbox" checked={record[recordKey]==1} disabled={true}  />
@@ -131,7 +133,7 @@ function TableCell({column, i, j, record, tdClassName, apiCallback}) {
             <CalculatorSubtractButton term={record[recordKey]} />
           </div>
           }
-          { (isEditInTableAllowed || (column?.Type ===  'boolean' || column?.Type ===  'tinyint(1)') ) && !enabled &&
+          { (isEditInTableAllowed || (column?.Type ===  'boolean' || column?.Type ===  'tinyint(1)') ) && !enabled && hasPermission('update', user_roles, table_meta) &&
           <button className='btn btn-sm w-auto'onClick={()=>setEnabled(prev=>!prev)}>
             <span className="material-symbols-outlined">edit</span>
           </button>

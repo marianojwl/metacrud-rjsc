@@ -6,6 +6,7 @@ const SearchboxTimeout = ({
   setValue,
   placeholder = 'Buscar...',
   readOnly = false,
+  disabled = false,
   delay = 900,
   autoFocus=true,
   className="SearchBoxInput"
@@ -13,6 +14,7 @@ const SearchboxTimeout = ({
   const [searchQuery, setSearchQuery] = useState(value);
   const [timeoutId, setTimeoutId] = useState(null);
   const [containerClass, setContainerClass] = useState('SearchBoxContainer');
+  const [hasFocus, setHasFocus] = useState(false);
 
   // Sync the local state with the prop value
   useEffect(() => {
@@ -61,10 +63,20 @@ const SearchboxTimeout = ({
     return () => clearTimeout(id);
   }, [searchQuery, setValue]);
 
+  useEffect(() => {
+    if(!disabled && hasFocus) {
+      document.querySelector('.MetaCrudSearchBoxInput').focus();
+    }
+  }, [disabled]);
+
   return (
     <div className='position-relative d-inline-block mb-2'>
       <span className={"material-symbols-outlined position-absolute"+(searchQuery===""?' text-muted':' text-primary')} style={{margin:"0.475rem 0.7rem"}}>search</span>
        <input
+          autoComplete="off"
+          onFocus={() => setHasFocus(true)}
+          onBlur={() => setHasFocus(false)}
+          disabled={disabled}
           readOnly={readOnly}
           autoFocus={autoFocus}
           value={searchQuery}

@@ -20,7 +20,7 @@ function TableHeader({column, i, setOrderBy, setOrderDir, orderBy, orderDir, sho
         <div>
           <div style={{whiteSpace:'nowrap'}} className='text-nowrap'>
             <span title={column?.Comment?.metacrud?.description??null}>{column?.Comment?.metacrud?.labelMaterialIcon?<span className='material-symbols-outlined fs-5 me-1' style={{verticalAlign:'text-bottom'}}>{column?.Comment?.metacrud?.labelMaterialIcon}</span>:null}{column?.Comment?.metacrud?.label??column?.Field}</span>
-            { ( showControls && !column?.Comment?.metacrud?.a ) &&
+            { ( showControls ) &&
               <HeaderFilter disabled={false} column={column} />
             }
           </div>

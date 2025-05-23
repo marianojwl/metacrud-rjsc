@@ -1,21 +1,22 @@
 import React from 'react'
 import {MetaCrudContext} from './MetaCrud'
 import SearchboxTimeout from './SearchboxTimeout';
+import hasPermission from './functions/hasPermission';
 
 
 function ActionBar({className=""}) {
-  const {searchDisabled, hiddenForcedSections, allowRelate, batchCreateColumns, reloadRecords, sections, search, setSearch, table_meta, user_roles, selectedRows, section, setSection} = React.useContext(MetaCrudContext);
+  const {records_data_hook, searchDisabled, hiddenForcedSections, allowRelate, batchCreateColumns, reloadRecords, sections, search, setSearch, table_meta, user_roles, selectedRows, section, setSection} = React.useContext(MetaCrudContext);
 
-  const hasPermission = (action) => {
-    if(action==='config') {
-      if(user_roles?.includes(1)) return true;
-      else return false;
-    }
-    if(!table_meta?.permissions) return true;
-    if(!table_meta?.permissions[action]) return true;
+  // const hasPermission = (action) => {
+  //   if(action==='config') {
+  //     if(user_roles?.includes(1)) return true;
+  //     else return false;
+  //   }
+  //   if(!table_meta?.permissions) return true;
+  //   if(!table_meta?.permissions[action]) return true;
     
-    return user_roles?.some(role => table_meta?.permissions[action]?.includes(role));
-  };
+  //   return user_roles?.some(role => table_meta?.permissions[action]?.includes(role));
+  // };
 
   const hiddenSections = hiddenForcedSections.concat(allowRelate?[]:['relate']);
 
@@ -29,7 +30,7 @@ function ActionBar({className=""}) {
           const disabled = section===sec || ((sec==='update' || sec==='duplicate') && selectedRows?.length!==1) || (sec==='delete' && selectedRows?.length===0);
           return (
               hiddenSections?.includes(sec) || 
-              !hasPermission(sections[sec]?.action) || 
+              !hasPermission(sections[sec]?.action, user_roles, table_meta) || 
               (sec==='batchCreate' && !batchCreateColumns?.length) ||
               (sec==='chart' && !table_meta?.charts?.length) ||
               (sec==='import' && !table_meta?.import)
@@ -63,6 +64,7 @@ function ActionBar({className=""}) {
       }
       { (section === 'read' && !searchDisabled) &&
         <SearchboxTimeout 
+          disabled={records_data_hook?.loading}
           autoFocus={false} 
           value={search} 
           setValue={setSearch} 

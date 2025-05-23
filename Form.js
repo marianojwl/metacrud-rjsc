@@ -171,7 +171,7 @@ function Form({isBatchForm=false}) {
           */
       })
       }
-      <button disabled={someAreInvalid} className='btn btn-primary mt-2 me-2' onClick={handleGuardar}>Guardar</button>
+      <button disabled={false} className='btn btn-primary mt-2 me-2' onClick={handleGuardar}>Guardar</button>
       <button className='btn btn-secondary mt-2' onClick={()=>setSection('read')}>Cancelar</button>
     </form>
     </div>
