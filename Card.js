@@ -58,15 +58,20 @@ function Card({record, modalTitle=""}) {
                     !badges?.length ? null : <div className='mb-2'>{
                     badges?.map(badge => <div key={'badge-'+badge?.Field} className='d-inline-flex me-2 mb-2'><CardValue field={badge?.Field} record={record} /></div>)}</div>
                   }
-                  <p className="card-text">{cardValuesObj?.text?.value}</p>
+                  <p style={{whiteSpace:"pre-line", overflow: 'hidden'}} className="card-text">{cardValuesObj?.text?.value}</p>
                   {
                     moreInfos?.map((info,i) => <div key={'info-'+i} className='my-2'><CardValue field={info?.Field} record={record} /></div>)
                   }
-                  <h6 className='text-muted'>Links Relacionados</h6>
                   {
+                    ! linksRelated?.filter(link => record[link?.Field])?.length ? null :
+                    <>
+                    <h6 className='text-muted'>Links Relacionados</h6>
+                    {
                     linksRelated?.map((link,i) => <div key={'link'+i} className='my-2'><a href={record[link?.Field]} target="_blank" className='text-decoration-none'>
                       <span className="material-symbols-outlined align-bottom">{link?.Comment?.metacrud?.cardIcon}</span> {link?.Comment?.metacrud?.label}
                     </a></div>)
+                    }
+                    </>
                   }
                 </div>
               </div>
@@ -95,7 +100,7 @@ function Card({record, modalTitle=""}) {
               !badges?.length ? null : <div className='mb-2'>{
               badges?.map(badge => <div key={'badg-'+badge?.Field} className='d-inline-flex me-2 mb-2'><CardValue field={badge?.Field} record={record} /></div>)}</div>
             }
-            <p className="card-text" style={{maxHeight: '3rem', overflow: 'hidden'}}
+            <p className="card-text" style={{whiteSpace:'pre-line', maxHeight: '3rem', overflow: 'hidden'}}
             >{cardValuesObj?.text?.value}</p>
             <p className="card-text">
               <button type="button" className="mb-2 btn btn-sm btn-primary float-end" data-bs-toggle="modal" data-bs-target={'#'+modalId}>

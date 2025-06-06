@@ -24,7 +24,7 @@ function HeaderFilter({column, disabled=false}) {
                  (metacrud?.a ?? column?.Field) 
                )?.replaceAll('.', '_');
   // const viewInThisTable = view && tablename === kTab;
-  console.log(kCol, vCol);
+  //console.log(kCol, vCol);
   //const options_hook = useApi(api_url + '/crud/' + (kDb?kDb+'.':'') + kTab + '?distinct=true&limit=1000&sort='+vCol+'&cols[]='+kCol+'&cols[]='+vCol + (view&&viewInThisTable ? '&metacrudView='+view : '') , '', false);
 
   const options_hook = useApi(api_url + '/filters/' + tablename + '/' + (metacrud?.a ?? column?.Field) + '/' + query, '', false, [query]);
