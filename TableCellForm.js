@@ -23,10 +23,24 @@ function TableCellForm({column, i, record, recordKey, apiCallback, enabled, setE
     if(e.target.type === 'checkbox') {
       setValue(e.target.checked ? 1 : 0);
     } else {
-      setValue(e.target.value);
+      setValue((e.target.value==='')?
+        ( column?.Null==='YES'?null:'' )
+        : e.target.value);
     }
   }
-  
+  // const onChange = (e) => {
+  //   if(e?.target?.type === 'checkbox') {
+  //     setData(prev=>{ 
+  //       return ({...prev, [e.target.name]: (e.target.checked ? 1 : 0)});
+  //     });
+  //   } else {
+  //     setData(prev=>({...prev, [e.target.name]: (e.target.value==='')?
+  //       ( columns?.find(column => column.Field === e.target.name)?.Null==='YES'?null:'' )
+  //       : e.target.value
+  //     }));
+  //   }
+  // };
+
   const handleGuardar = (e) => {
     e.preventDefault();
     post_hook.put({[primaryKeyName]:record[primaryKeyName], [column.Field]: value});

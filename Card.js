@@ -2,6 +2,7 @@ import React from 'react'
 import {MetaCrudContext} from './MetaCrud'
 import CardValue from './CardValue';
 import { Link } from 'react-router-dom';
+import LinkifyText from '../../components/LinkifyText';
 
 function Card({record, modalTitle=""}) {
   const { columns, wrappers, primaryKeyName } = React.useContext(MetaCrudContext);
@@ -58,7 +59,8 @@ function Card({record, modalTitle=""}) {
                     !badges?.length ? null : <div className='mb-2'>{
                     badges?.map(badge => <div key={'badge-'+badge?.Field} className='d-inline-flex me-2 mb-2'><CardValue field={badge?.Field} record={record} /></div>)}</div>
                   }
-                  <p style={{whiteSpace:"pre-line", overflow: 'hidden'}} className="card-text">{cardValuesObj?.text?.value}</p>
+                  <p style={{whiteSpace:"pre-line", overflow: 'hidden'}} className="card-text">
+                    <LinkifyText text={cardValuesObj.text.value} /></p>
                   {
                     moreInfos?.map((info,i) => <div key={'info-'+i} className='my-2'><CardValue field={info?.Field} record={record} /></div>)
                   }

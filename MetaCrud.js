@@ -14,12 +14,12 @@ import Chart from './Chart';
 
 export const MetaCrudContext = createContext();
 
-function MetaCrud({ maxPageSize=undefined, searchDisabled=false, metaDataVersion=1, allowRelate=false, hiddenForcedSections=[], format="table", defaultPageLimit=20, view=null, hideTableTitle=false, createCallbacks=[], updateCallbacks=[], deleteCallbacks=[], tablename, api_url, user_roles, extra_columns=[], wrappers={}, defaultOrderBy=1, defaultOrderDir="ASC"}) {
+function MetaCrud({ uploadBaseUrl="",  hideHidden=false, showCalc=true, maxPageSize=undefined, searchDisabled=false, metaDataVersion=1, allowRelate=false, hiddenForcedSections=[], format="table", defaultPageLimit=20, view=null, hideTableTitle=false, createCallbacks=[], updateCallbacks=[], deleteCallbacks=[], tablename, api_url, user_roles, extra_columns=[], wrappers={}, defaultOrderBy=1, defaultOrderDir="ASC", defaultFilters={}}) {
   
   // SECTIONS
   const sections = {
     "read": { "action":"", "label":"Registros", "buttonClassName":"secondary", "icon":"table" },
-    "chart": { "action":"", "label":"Gráficos", "buttonClassName":"secondary", "icon":"bar_chart" },
+    // "chart": { "action":"", "label":"Gráficos", "buttonClassName":"secondary", "icon":"bar_chart" },
     "create": { "action":"create", "label":"Nuevo", "buttonClassName":"success", "icon":"add" },
     "batchCreate": { "action":"create", "label":"Nuevo Lote", "buttonClassName":"success", "icon":"library_add" },
     "import": { "action":"create", "label":"Importar", "buttonClassName":"success", "icon":"upload_file" },
@@ -77,7 +77,7 @@ function MetaCrud({ maxPageSize=undefined, searchDisabled=false, metaDataVersion
   const [orderDir, setOrderDir] = useState(defaultOrderDir);
 
   // FILTERS
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState(defaultFilters);
 
   // HOOKS
   const columns_data_hook = useApi(api_url + '/meta/' + tablename + '/columns', '?mdv='+metaDataVersion, true);
@@ -149,7 +149,7 @@ function MetaCrud({ maxPageSize=undefined, searchDisabled=false, metaDataVersion
   const {ctrlKey} = keyboard_events_hook;
 
   return ( table_data_hook?.loading ? <Loading legend='Cargando estructura de tabla' /> :
-    <MetaCrudContext.Provider value={{maxPageSize, searchDisabled, mappedFilters, allowRelate, ctrlKey, metacrudView, hiddenForcedSections, batchCreateColumns, restrictions, query, reloadRecords, table_data_hook, table_meta, table_status, view, filters, setFilters, sections, columns, numberOfHiddenColumns, primaryKeyName, extra_columns, wrappers, search, setSearch, orderBy, orderDir, setOrderBy, setOrderDir, apiCallback, setLastResult, user_roles, page, setPage, pageLimit, setPageLimit, doReload, selectedRows, setSelectedRows, section, setSection, columns_data_hook, records_data_hook, tablename, api_url, createCallbacks, updateCallbacks, deleteCallbacks}}>
+    <MetaCrudContext.Provider value={{uploadBaseUrl, hideHidden, showCalc, maxPageSize, searchDisabled, mappedFilters, allowRelate, ctrlKey, metacrudView, hiddenForcedSections, batchCreateColumns, restrictions, query, reloadRecords, table_data_hook, table_meta, table_status, view, filters, setFilters, sections, columns, numberOfHiddenColumns, primaryKeyName, extra_columns, wrappers, search, setSearch, orderBy, orderDir, setOrderBy, setOrderDir, apiCallback, setLastResult, user_roles, page, setPage, pageLimit, setPageLimit, doReload, selectedRows, setSelectedRows, section, setSection, columns_data_hook, records_data_hook, tablename, api_url, createCallbacks, updateCallbacks, deleteCallbacks}}>
       { format === 'cards' ? <Cards records={records_data_hook?.response?.data?.rows} /> : 
         <div className='px-1 py-1'>
         { hideTableTitle ? null :

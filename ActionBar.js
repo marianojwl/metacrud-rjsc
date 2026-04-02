@@ -5,7 +5,7 @@ import hasPermission from './functions/hasPermission';
 
 
 function ActionBar({className=""}) {
-  const {records_data_hook, searchDisabled, hiddenForcedSections, allowRelate, batchCreateColumns, reloadRecords, sections, search, setSearch, table_meta, user_roles, selectedRows, section, setSection} = React.useContext(MetaCrudContext);
+  const {setFilters, filters, records_data_hook, searchDisabled, hiddenForcedSections, allowRelate, batchCreateColumns, reloadRecords, sections, search, setSearch, table_meta, user_roles, selectedRows, section, setSection} = React.useContext(MetaCrudContext);
 
   // const hasPermission = (action) => {
   //   if(action==='config') {
@@ -24,7 +24,12 @@ function ActionBar({className=""}) {
     <div className={'MetaCrudActionBar d-flex flex-wrap '+className}>
       <div className='position-relative'>
       <div className='position-sticky top-0 start-0'>
-      <button onClick={reloadRecords} className='btn btn-outline-secondary me-2 mb-2'><span className="material-symbols-outlined" style={{verticalAlign:"text-bottom"}}>refresh</span></button>
+      <button onClick={reloadRecords} className='btn btn-outline-secondary me-2 mb-2'><span className="material-symbols-outlined" style={{verticalAlign:"text-bottom"}}>refresh</span><span className='d-none d-md-inline'> Refrescar</span></button>
+      
+      <button disabled={Object.keys(filters).length===0} onClick={() => setFilters({})} className='btn btn-outline-secondary mb-2 me-2'>
+        <span className='material-symbols-outlined align-text-top'>filter_list_off</span><span className='d-none d-md-inline'> Limpiar Filtros</span>
+      </button>
+
       {
         Object.keys(sections)?.map((sec,index)=>{
           const disabled = section===sec || ((sec==='update' || sec==='duplicate') && selectedRows?.length!==1) || (sec==='delete' && selectedRows?.length===0);

@@ -25,7 +25,7 @@ function InputFileUploader({column, value, onChange}){
 
   const [fileSetted, setFileSetted] = React.useState(false);
 
-  const {api_url, tablename} = React.useContext(MetaCrudContext);
+  const {api_url, tablename, uploadBaseUrl} = React.useContext(MetaCrudContext);
 
   const meta = column?.Comment?.metacrud;
 
@@ -62,7 +62,7 @@ function InputFileUploader({column, value, onChange}){
           {
             meta?.upload?.accept?.filter(a=>a.startsWith('image')).length > 0 &&
             <div className='mt-1'>
-              <img src={'/'+value} alt={value} style={{maxWidth:'100%', maxHeight:'140px'}} />
+              <img className='mb-3' src={uploadBaseUrl+value} alt={value} style={{maxWidth:'100%', maxHeight:'140px'}} />
             </div>
           }
         </div>
@@ -99,9 +99,29 @@ function InputFileUploader({column, value, onChange}){
 }
 
 function FormInput({autoFocus=false, column, i, data, onChange, showLabel=true, enabled=true}) {
+  const {restrictions, section } = React.useContext(MetaCrudContext);
+  const restricted_value = restrictions?.[section]?.[column?.Field]?.[0];
+  React.useEffect(()=>{
+    if(!restricted_value) return;
+    onChange({target:{name:column?.Field, value:restricted_value}});
+  }, [restricted_value]);
+
+
   const metacrud = column?.Comment?.metacrud;
   let [type, lenght] = column?.Type.split('(');
   if(lenght) lenght = lenght.slice(0, -1);
+
+
+  const columnDefault = column?.Default;
+  React.useEffect(()=>{
+    if(columnDefault === null) return;
+    if(type==="boolean" || type==="tinyint") {
+      onChange({target:{name:column?.Field, value:columnDefault, checked:columnDefault==1, type:"checkbox"}});
+    } else {
+      onChange({target:{name:column?.Field, value:columnDefault}});
+    }
+  }, [columnDefault]);
+
 
   // metacrud: { "regex_pattern": "^(true|false|1|0)$" }
   const regex = new RegExp(metacrud?.regex_pattern??'.*');
@@ -109,6 +129,8 @@ function FormInput({autoFocus=false, column, i, data, onChange, showLabel=true, 
   const isValid = regex.test(data[column.Field]);
 
   const disabled = column?.Key === 'PRI';
+
+  const readOnly = !(!restricted_value);
 
   
   const inputType = (Type) => {
@@ -118,6 +140,7 @@ function FormInput({autoFocus=false, column, i, data, onChange, showLabel=true, 
       case 'text': return 'text';
       case 'tinytext': return 'text';
       case 'date': return 'date';
+      case 'time': return 'time';
       case 'datetime': return 'datetime-local';
       default: return 'text';
     }
@@ -128,8 +151,13 @@ function FormInput({autoFocus=false, column, i, data, onChange, showLabel=true, 
     let [type, lenght] = column?.Type.split('(');
     if(lenght) lenght = lenght.slice(0, -1);
 
+    const validationFunction =  metacrud?.validationFunction
+                                ? new Function('return ' + metacrud?.validationFunction)()
+                                : foo=>true;
+                                
     const regex = new RegExp(metacrud?.regex_pattern??'.*');
-    const isValid = regex.test(data[column.Field]);
+    const isValid = regex.test(data[column.Field])
+                    && validationFunction(data[column.Field]);
     const disabled = column?.Key === 'PRI' || !enabled;
 
     let elem = type;
@@ -165,12 +193,36 @@ function FormInput({autoFocus=false, column, i, data, onChange, showLabel=true, 
             { (showLabel && metacrud?.description) && <div><small>{metacrud?.description}</small></div> }
             <textarea 
               autoFocus={autoFocus}
-              className={'form-control'+(disabled?'':(metacrud?.regex_pattern?(isValid?' is-valid':' is-invalid'):''))}
+              className={'form-control'+(disabled?'':((metacrud?.regex_pattern || metacrud?.validationFunction)?(isValid?' is-valid':' is-invalid'):''))}
               disabled={disabled}
               rows={column?.Field?.endsWith('_HTML')?22:5}
               name={column.Field} 
               value={data[column.Field] || ""} 
               onChange={onChange} />
+          </div>
+        );
+        break;
+      case 'json':
+        return (
+          <div key={key} className='form-group mb-1'>
+            { showLabel && <label>{metacrud?.label??column?.Field}</label> }
+            { (showLabel && metacrud?.description) && <div><small>{metacrud?.description}</small></div> }
+            <textarea 
+              autoFocus={autoFocus}
+              className={'form-control'+(disabled?'':(metacrud?.regex_pattern?(isValid?' is-valid':' is-invalid'):''))}
+              disabled={disabled}
+              rows={column?.Field?.endsWith('_HTML')?22:5}
+              name={column.Field} 
+              value={(()=>{
+                let value = data[column.Field];
+                if(typeof value === "object"){
+                  return JSON.stringify(value);
+                } else {
+                  return value;
+                }
+              })()} 
+              onChange={onChange}
+            />
           </div>
         );
         break;
@@ -191,7 +243,7 @@ function FormInput({autoFocus=false, column, i, data, onChange, showLabel=true, 
             disabled={disabled}
             type='checkbox' 
             name={column.Field} 
-            checked={data[column.Field]==1 || false} 
+            checked={data[column.Field]==1 ?? false} 
             onChange={onChange} />
           </div>
         </div>);
@@ -201,16 +253,23 @@ function FormInput({autoFocus=false, column, i, data, onChange, showLabel=true, 
           { showLabel && <label>{metacrud?.label??column?.Field}</label> }
           { (showLabel && metacrud?.description) && <div><small>{metacrud?.description}</small></div> }
           <input 
-            className={'form-control'+(disabled?'':(metacrud?.regex_pattern?(isValid?' is-valid':' is-invalid'):''))}
+            className={'form-control'+(disabled?'':((metacrud?.regex_pattern || metacrud?.validationFunction)?(isValid?' is-valid':' is-invalid'):''))}
             disabled={disabled}
             type={metacrud?.inputType??inputType(type)} 
             maxLength={lenght}
             name={column.Field} 
-            value={data[column.Field] || ""}
+            value={data[column.Field] ?? ""}
             onChange={onChange}
             autoFocus={autoFocus}
             onFocus={(e)=>{e.target.select();}}
+            readOnly={readOnly}
             />
+            <input
+              className={'form-check-input'}
+              type='checkbox'
+              checked={data[column.Field]===null}
+              onChange={()=>onChange({target:{value:'', type:'text'}})} 
+            /><small className={data[column.Field]===null?'':'text-muted'}> {column?.Comment?.metacrud?.nullLabel??'NULO'}</small>
         </div>);
         break;
 

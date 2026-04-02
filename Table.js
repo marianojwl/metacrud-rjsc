@@ -14,7 +14,7 @@ export const TableContext = React.createContext();
 
 
 function Table({className=""}) {
-  const {metacrudView, table_data_hook, view, numberOfHiddenColumns, extra_columns, wrappers, orderBy, orderDir, setOrderBy, setOrderDir, selectedRows, setSelectedRows, columns_data_hook, records_data_hook} = React.useContext(MetaCrudContext);
+  const {hideHidden, showCalc, metacrudView, table_data_hook, view, numberOfHiddenColumns, extra_columns, wrappers, orderBy, orderDir, setOrderBy, setOrderDir, selectedRows, setSelectedRows, columns_data_hook, records_data_hook} = React.useContext(MetaCrudContext);
 
 
   //console.log(table_data_hook);
@@ -41,7 +41,7 @@ function Table({className=""}) {
   
   // Calculator
   // enableCalc if there is at least one column with numeric type
-  const calcEnabled = columns
+  const calcEnabled = showCalc && columns
                       // filter key columns
                       ?.filter(column => !column?.Key)
                       // filter columns with Type tinyint(1)
@@ -132,7 +132,7 @@ function Table({className=""}) {
                 })
               }
               {
-                numberOfHiddenColumns ? 
+                (numberOfHiddenColumns>0 && !hideHidden) ? 
                 <th>
                   <div>
                     <span className='btn material-symbols-outlined'>info</span>
@@ -151,7 +151,7 @@ function Table({className=""}) {
                 <React.Fragment key={"TableRowF-"+i}>
                   <TableRow key={"TableRow-"+i} handleCheckOne={handleCheckOne} columns={columns} record={record} i={i} tdClassName={tdClassName} handleExpandRow={handleExpandRow} />
                 {
-                  (numberOfHiddenColumns && expandedRows?.includes(record[primaryKeyName])) ? (
+                  ((numberOfHiddenColumns>0 && !hideHidden) && expandedRows?.includes(record[primaryKeyName])) ? (
                     <TableRowExpansion key={"TableRowExpansion-"+i} record={record} />
                   ) : null
                 }

@@ -35,9 +35,14 @@ function FormBatchInput({autoFocus=false, column, i, data, onChange, showLabel=t
     let [type, lenght] = column?.Type.split('(');
     if(lenght) lenght = lenght.slice(0, -1);
 
+    const validationFunction =  metacrud?.validationFunction
+                                ? new Function('return ' + metacrud?.validationFunction)()
+                                : foo=>true;
+
     const regex = new RegExp(metacrud?.regex_pattern??'.*');
     //const isValid = regex.test(data[column.Field]);
-    const isValid = data[column.Field]?.map(e=>regex.test(e)).reduce((a,b)=>a&&b, true);
+    const isValid = data[column.Field]?.map?.(e=>regex.test(e)).reduce((a,b)=>a&&b, true)
+                    && data[column.Field]?.map?.(e=>validationFunction(e)).reduce((a,b)=>a&&b, true);
     const disabled = column?.Key === 'PRI' || !enabled;
 
     let elem = type;
@@ -58,10 +63,10 @@ function FormBatchInput({autoFocus=false, column, i, data, onChange, showLabel=t
           { (showLabel && metacrud?.description) && <div><small>{metacrud?.description}</small></div> }
           <textarea
             rows={5} 
-            className={'form-control'+(disabled?'':(metacrud?.regex_pattern?(isValid?' is-valid':' is-invalid'):''))}
+            className={'form-control'+(disabled?'':((metacrud?.regex_pattern || metacrud?.validationFunction)?(isValid?' is-valid':' is-invalid'):''))}
             disabled={disabled}
             name={column.Field} 
-            value={data[column.Field]?.join('\n')}
+            value={data[column.Field]?.join?.('\n')}
             onChange={onTextBatchChange}
             autoFocus={autoFocus} />
         </div>);

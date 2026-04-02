@@ -16,8 +16,17 @@ function Form({isBatchForm=false}) {
   const post_hook = useApi(api_url + '/crud/' + tablename, '', false, [], apiCallback);
 
   const columns = columns_data_hook?.response?.data?.sort((a, b) => b?.Comment?.metacrud?.order??0 - a?.Comment?.metacrud?.order??0)??[];
-
-  const [data, setData] = React.useState({});
+  const default_data =  columns
+                        ?.filter(col=>col.Null === "NO" && col?.Default!=="CURRENT_TIMESTAMP")
+                        ?.reduce((acc, col) => {
+                          acc[col.Field] = col.Default
+                                            ? col.Default
+                                            : col.Type === "tinyint(1)"
+                                              ? 0
+                                              : "";
+                          return acc;
+                        }, {});
+  const [data, setData] = React.useState(default_data);
 
   const [formResult, setFormResult] = React.useState(null);
 
@@ -28,13 +37,15 @@ function Form({isBatchForm=false}) {
   
 
   const onChange = (e) => {
-    if(e.target.type === 'checkbox') {
-      setData({...data, [e.target.name]: e.target.checked ? 1 : 0});
+    if(e?.target?.type === 'checkbox') {
+      setData(prev=>{ 
+        return ({...prev, [e.target.name]: (e.target.checked ? 1 : 0)});
+      });
     } else {
-      setData({...data, [e.target.name]: (e.target.value==='')?
+      setData(prev=>({...prev, [e.target.name]: (e.target.value==='')?
         ( columns?.find(column => column.Field === e.target.name)?.Null==='YES'?null:'' )
         : e.target.value
-      });
+      }));
     }
   };
 
@@ -53,44 +64,7 @@ function Form({isBatchForm=false}) {
     }
   };
 
-  /*
-  const inputElement = (column, key) => {
-    const metacrud = column?.Comment?.metacrud;
-    let [type, lenght] = column?.Type.split('(');
-    if(lenght) lenght = lenght.slice(0, -1);
-
-    const regex = new RegExp(metacrud?.regex_pattern??'.*');
-    const isValid = regex.test(data[column.Field]);
-    const disabled = column?.Key === 'PRI';
-
-    let elem = type;
-
-    if(metacrud?.foreign_key && metacrud?.foreign_value) elem = 'select';
-
-    switch(elem){
-      case 'select':
-        return (<div key={key} className='form-group mb-1'>
-          <label>{metacrud?.label??column?.Field}</label>
-          <Select column={column} data={data} onChange={onChange} disabled={disabled} isValid={isValid} />
-        </div>);
-        break;
-      default:
-        return (<div key={key} className='form-group mb-1'>
-          <label>{metacrud?.label??column?.Field}</label>
-          <input 
-            className={'form-control'+(disabled?'':(metacrud?.regex_pattern?(isValid?' is-valid':' is-invalid'):''))}
-            disabled={disabled}
-            type={metacrud?.inputType??inputType(type)} 
-            maxLength={lenght}
-            name={column.Field} 
-            value={data[column.Field] || ''}
-            onChange={onChange} />
-        </div>);
-        break;
-
-    }
-  };
-  */
+  
 
   const reEnableButton = (e, label='Guardar') => {
     e.target.disabled = false;
@@ -146,7 +120,9 @@ function Form({isBatchForm=false}) {
       }
       <form disabled={post_hook?.loading} onSubmit={handleGuardar}>
       {
-        columns?.map((column, i) => {
+        columns
+        ?.filter(c=>c?.Default!=="CURRENT_TIMESTAMP")
+        ?.map((column, i) => {
           const inForm = (section === 'create' || section === 'batchCreate') ? (column?.Comment?.metacrud?.inCreateForm??true) : (column?.Comment?.metacrud?.inUpdateForm??true);
           const isBatchInput = isBatchForm && (column?.Comment?.metacrud?.allowBatchCreate??false);
           return ( !inForm || (column?.Key === 'PRI' && (section === 'create' || section === 'batchCreate'))  ? null : (

@@ -27,6 +27,7 @@ function ClickToFilterWrapper(props) {
 
 
   const field = props?.column?.Field;
+  const fieldType = props?.column?.Type;
   const foreign_key = props?.column?.Comment?.metacrud?.foreign_key?.replaceAll('.','_');
   const foreign_value = props?.column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_');
   const record = props?.record;
@@ -50,7 +51,11 @@ function ClickToFilterWrapper(props) {
       }
     });
   }}>
-    {record[foreign_value??field]}
+    {
+      fieldType === "json"
+      ? JSON.stringify(record[foreign_value??field])
+      : record[foreign_value??field]
+    }
   </a>
 )
 }
@@ -76,7 +81,7 @@ function HTMLModalPreviewWrapper(props) {
             <h1 className="modal-title fs-5">Vista Previa</h1>
             <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div className="modal-body">
+          <div className="modal-body" style={{color:'#111111'}}>
             <div dangerouslySetInnerHTML={{__html: value}} />
           </div>
           <div className="modal-footer">
@@ -92,39 +97,50 @@ function HTMLModalPreviewWrapper(props) {
 function TableCell({column, i, j, record, tdClassName, apiCallback}) {
   const {calcOn, calcSum} = React.useContext(TableContext);
   const [enabled, setEnabled] = React.useState(false);
-  const {wrappers, user_roles, table_meta} = React.useContext(MetaCrudContext);
+  const {uploadBaseUrl, wrappers, user_roles, table_meta} = React.useContext(MetaCrudContext);
   const isForeign = column?.Comment?.metacrud?.foreign_key ? true : false;
   //const recordKey = (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field;
   const recordKey = useMemo(() => (column?.Comment?.metacrud?.foreign_value?.replaceAll('.','_')) ?? column.Field, [column]);
   const isWrapped = wrappers[ recordKey ]? true : (column?.Field?.endsWith('_HTML') || column?.Field?.endsWith('_html_body'));
-  const isEditInTableAllowed = column?.Comment?.metacrud?.allowEditInTable?.always || ( column?.Comment?.metacrud?.allowEditInTable?.ifNull && record[ recordKey ] === null );
+  const isEditInTableAllowedUnset =   column?.Comment?.metacrud?.allowEditInTable?.always !== false 
+                                &&  column?.Comment?.metacrud?.allowEditInTable?.always !== true
+                                &&  column?.Comment?.metacrud?.allowEditInTable?.ifNull !== false
+                                &&  column?.Comment?.metacrud?.allowEditInTable?.ifNull !== true;
+  const isEditInTableAllowed = ( column?.Comment?.metacrud?.allowEditInTable?.always === false || column?.Comment?.metacrud?.allowEditInTable?.ifNull === false ) ? false : column?.Comment?.metacrud?.allowEditInTable?.always || ( column?.Comment?.metacrud?.allowEditInTable?.ifNull && record[ recordKey ] === null );
   const Wrapper = (column?.Field?.endsWith('_HTML') || column?.Field?.endsWith('_html_body')) ? HTMLModalPreviewWrapper : wrappers[ recordKey ];
   const preformattedTypes = ['text','tinytext'];
   return (
     <td key={"TableCell-"+i+"-"+j} className={tdClassName}>
       <div className=''>
-        <div className={(calcOn && calcSum && calcSum==record[recordKey])?'bg-primary text-light':''}>
+        <div className={'d-inline-flex '+((calcOn && calcSum && calcSum==record[recordKey])?'bg-primary text-light':'')}>
           {
-            enabled ? 
-              <TableCellForm column={column} record={record} recordKey={recordKey} apiCallback={apiCallback} enabled={enabled} setEnabled={setEnabled} />
-            :
-            (
-              isWrapped ? 
-                <Wrapper key={"wrapper-"+i+"-"+j} inner_key={"wrapper-"+i+"-"+j} field={recordKey} record={record} apiCallback={apiCallback} />  
-              : 
-              isForeign ? 
-                <ClickToFilterWrapper key={"ClickToFilter-"+i+"-"+j} record={record} column={column} />
-              :
-              preformattedTypes?.includes(column?.Type) ? 
-                <pre style={{wordBreak:'break-all', whiteSpace: 'pre-wrap',
-                   maxWidth:'70vw', maxHeight:'2.5rem', overflowY: 'auto' }} title={record[recordKey]}>{record[recordKey]}</pre> : 
-                (column?.Type ===  'boolean' || column?.Type ===  'tinyint(1)') ?
-                  <div className='form-check form-switch'>
-                    <input className='form-check-input' type="checkbox" checked={record[recordKey]==1} disabled={true}  />
-                  </div>
-                :
-                <ClickToFilterWrapper key={"ClickToFilter-"+i+"-"+j} record={record} column={column} />
-            )
+            enabled
+              ? <TableCellForm column={column} record={record} recordKey={recordKey} apiCallback={apiCallback} enabled={enabled} setEnabled={setEnabled} />
+              : (  isWrapped
+                    ? <Wrapper key={"wrapper-"+i+"-"+j} inner_key={"wrapper-"+i+"-"+j} field={recordKey} record={record} apiCallback={apiCallback} />  
+                    : isForeign
+                      ? <ClickToFilterWrapper key={"ClickToFilter-"+i+"-"+j} record={record} column={column} />
+                      : preformattedTypes?.includes(column?.Type)
+                        ? <pre style={{wordBreak:'break-all', whiteSpace: 'pre-wrap', maxWidth:'70vw', maxHeight:'2.5rem', overflowY: 'auto' }} title={record[recordKey]}>{record[recordKey]}</pre>
+                        : (column?.Type ===  'boolean' || column?.Type ===  'tinyint(1)')
+                          ? <div className='form-check form-switch'>
+                              <input className='form-check-input' type="checkbox" checked={record[recordKey]==1} disabled={true}  />
+                            </div>
+                          // : column?.Comment?.metacrud?.upload && column?.Comment?.metacrud?.upload?.accept?.some(a=>["image/png", "image/jpeg"].includes(a)) && ["png", "jpg", "jpeg"].includes(record[recordKey]?.split(".")?.pop()?.toLowerCase())
+                          : column?.Comment?.metacrud?.upload
+                            ? (
+                                record[recordKey]
+                                ? <a target="_blank" title={record[recordKey]} href={uploadBaseUrl+record[recordKey]}>
+                                  {
+                                    ["png", "jpg", "jpeg"].includes(record[recordKey]?.split(".")?.pop()?.toLowerCase())
+                                    ? <img style={{maxHeight:'3rem'}} className='img-fluid' src={uploadBaseUrl+record[recordKey]} />
+                                    : <span className='material-symbols-outlined'>file_present</span>
+                                  }
+                                  </a>
+                                : null
+                              )
+                            : <ClickToFilterWrapper key={"ClickToFilter-"+i+"-"+j} record={record} column={column} />
+                )
           }
           { // if numeric or string containing numbers, show calculator buttons
           (calcOn && ( typeof record?.[recordKey] === 'numeric' ||typeof record?.[recordKey] === 'string' ) &&  (record?.[recordKey])?.match(/^(\-)?[0-9]+(\.[0-9]+)?$/)) && 
@@ -133,8 +149,8 @@ function TableCell({column, i, j, record, tdClassName, apiCallback}) {
             <CalculatorSubtractButton term={record[recordKey]} />
           </div>
           }
-          { (isEditInTableAllowed || (column?.Type ===  'boolean' || column?.Type ===  'tinyint(1)') ) && !enabled && hasPermission('update', user_roles, table_meta) &&
-          <button className='btn btn-sm w-auto'onClick={()=>setEnabled(prev=>!prev)}>
+          { ((isEditInTableAllowed && !isEditInTableAllowedUnset) || ( isEditInTableAllowedUnset && (column?.Type ===  'boolean' || column?.Type ===  'tinyint(1)')) ) && !enabled && hasPermission('update', user_roles, table_meta) &&
+          <button className='d-inline-flex px-1 btn btn-sm w-auto'onClick={()=>setEnabled(prev=>!prev)}>
             <span className="material-symbols-outlined">edit</span>
           </button>
           }

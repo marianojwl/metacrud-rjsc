@@ -24,7 +24,7 @@ function Select({column, data, onChange, disabled, isValid, autoFocus=false}) {
       onChange={onChange}>
       <option value=''>Seleccione...</option>
       {
-        options_hook?.response?.data?.rows?.filter(option => !restrictions?.[section] || !restrictions?.[section]?.[column.Field] || restrictions?.[section]?.[column.Field]?.includes(option[kCol]))?.map((option, i) => <option key={i} value={option[kCol]}>{option[vCol]}</option>)
+        options_hook?.response?.data?.rows?.filter(option => !restrictions?.[section] || !restrictions?.[section]?.[column.Field] || restrictions?.[section]?.[column.Field]?.map(v=>""+v)?.includes(""+option[kCol]))?.map((option, i) => <option key={i} value={option?.[kCol]}>{option?.[vCol]}</option>)
       }
   </select>
   )

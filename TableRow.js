@@ -8,7 +8,7 @@ import Loading from './Loading';
 export const TableRowContext = React.createContext({});
 
 function TableRow({columns, i, record, tdClassName, handleCheckOne}) {
-  const { view, extra_columns, api_url, tablename, selectedRows, setSelectedRows, numberOfHiddenColumns, primaryKeyName, query} = React.useContext(MetaCrudContext);
+  const { hideHidden, view, extra_columns, api_url, tablename, selectedRows, setSelectedRows, numberOfHiddenColumns, primaryKeyName, query} = React.useContext(MetaCrudContext);
   const {unhiddenColumns, collapsedColumns, setCollapsedColumns, expandedRows, handleExpandRow} = React.useContext(TableContext);
   const [rec, setRec] = React.useState(record);
 
@@ -39,7 +39,7 @@ function TableRow({columns, i, record, tdClassName, handleCheckOne}) {
           return (<TableCell key={"ec-"+i+"-"+j} i={i} j={j} column={column} record={rec} tdClassName={tdClassName} apiCallback={()=>{}} />)
         })
       }
-      {numberOfHiddenColumns ? 
+      { (numberOfHiddenColumns>0 && !hideHidden) ? 
         <td className={tdClassName}>
           <button className='btn btn-sm' onClick={()=>handleExpandRow(record[primaryKeyName])}>
             <span className={'material-symbols-outlined '}>{(expandedRows?.includes(record[primaryKeyName]) ? 'expand_less' : 'expand_more')}</span>
